@@ -21,6 +21,7 @@
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
+#include "IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionnary/src/quasidictionnary.h"
 /********************************************************************************/
 
@@ -38,7 +39,7 @@
 class kmer_quasi_indexer : public Tool
 {
 private:
-	quasiDictionnary <vector< u_int64_t>::iterator, vector< u_int64_t>::iterator > quasiDico;
+	quasiDictionnary <IteratorKmerH5Wrapper, std::vector< list<u_int32_t> >::iterator > quasiDico;
 	u_int64_t nbSolidKmers;
 public:
 
