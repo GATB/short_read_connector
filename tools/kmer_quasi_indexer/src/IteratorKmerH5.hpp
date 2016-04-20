@@ -19,13 +19,12 @@ public:
 	IteratorKmerH5()  : iterator(0), pos(0) {}
 
 	IteratorKmerH5(Iterator<Kmer<>::Count>* iterator, const int kmer_size)  : iterator(iterator), pos(0)  {
-		iterator->first();
-		model = Kmer<>::ModelCanonical(kmer_size);
+//		iterator->first();
 	}
 
-	unsigned long long  const& operator*()  {
+	u_int64_t  const& operator*()  {
 		Kmer<>::Count& count = iterator->item();
-		unsigned long long kmer_int_value=oahash(count.value);
+		u_int64_t kmer_int_value=oahash(count.value);
 		return kmer_int_value;
 		//cout << std::get<0>(iterator->item()) << endl;
 		//return 0;
@@ -41,7 +40,7 @@ public:
         pos++;
         if (iterator->isDone())
         {
-            iterator = nullptr;
+        	iterator = nullptr;
             pos = 0;
         }
         return *this;
@@ -60,29 +59,10 @@ public:
 private:
 	Iterator<Kmer<>::Count>* iterator;
 	unsigned long pos;
-	Kmer<>::ModelCanonical model;
 	//KmerLca _item;
 	//u_int64_t _item;
 };
 
-////template<typename Key>
-//class IteratorGzMPHFWrapperKey
-//{
-//public:
-//	IteratorGzMPHFWrapperKey(){}
-//	IteratorGzMPHFWrapperKey (Iterator<KmerLca>* iterator) : iterator(iterator) {}
-//	IteratorGzMPHFWrapperKey(IteratorGzMPHFWrapperKey& copy){}
-//
-//	IteratorGzMPHFAdaptatorKey begin() const  {  return IteratorGzMPHFAdaptatorKey (iterator); }
-//	IteratorGzMPHFAdaptatorKey end  () const  {  return IteratorGzMPHFAdaptatorKey ();         }
-//    size_t        size () const  {  return 0;                        }
-//
-//private:
-//    // noncopyble // FIXME: made it copyable because boophf needed it; need to see if it's correct
-//    //iterator_wrapper(iterator_wrapper const&);
-//    //iterator_wrapper& operator=(iterator_wrapper const&);
-//    Iterator<KmerLca>* iterator;
-//};
 
 
 //template<typename Key>
@@ -102,7 +82,6 @@ private:
     //iterator_wrapper(iterator_wrapper const&);
     //iterator_wrapper& operator=(iterator_wrapper const&);
     Iterator<Kmer<>::Count>* iterator;
-	Kmer<>::ModelCanonical model;
 	int kmer_size;
 };
 
