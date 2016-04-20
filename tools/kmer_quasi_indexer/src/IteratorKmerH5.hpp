@@ -23,9 +23,10 @@ public:
 		model = Kmer<>::ModelCanonical(kmer_size);
 	}
 
-	string const& operator*()  {
+	unsigned long long  const& operator*()  {
 		Kmer<>::Count& count = iterator->item();
-		return model.toString(count.value);
+		unsigned long long kmer_int_value=oahash(count.value);
+		return kmer_int_value;
 		//cout << std::get<0>(iterator->item()) << endl;
 		//return 0;
 		//return _item;

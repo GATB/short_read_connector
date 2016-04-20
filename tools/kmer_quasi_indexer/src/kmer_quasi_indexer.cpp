@@ -66,7 +66,7 @@ void kmer_quasi_indexer::create_quasi_dictionary (){
 	IteratorKmerH5Wrapper iteratorOnKmers(solidKmers.iterator(), kmer_size);
 
 //	quasiDico = quasiDictionnary<IteratorKmerH5, std::vector< list<u_int32_t> > (nbSolidKmers, iteratorOnKmers, all_list.begin(), fingerprint_size, sizeof(list<u_int32_t>));
-	quasiDico = quasiDictionnary<IteratorKmerH5Wrapper, std::vector< list<u_int32_t> > > (nbSolidKmers, iteratorOnKmers, fingerprint_size, sizeof(list<u_int32_t>));
+	quasiDico = quasiDictionnary<IteratorKmerH5Wrapper, std::vector< list<u_int32_t> >::iterator > (nbSolidKmers, iteratorOnKmers, fingerprint_size, sizeof(list<u_int32_t>));
 
 	          //quasiDictionnary                                                (u_int64_t nelement, RangeKeyOnly& itKey, RangeKeyValue& it, const int fingerprint_size, const int value_size, double gammaFactor=1, int nthreads=1)
 }
