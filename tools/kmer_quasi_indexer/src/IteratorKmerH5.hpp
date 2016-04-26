@@ -18,20 +18,16 @@ class IteratorKmerH5 : public std::iterator<std::forward_iterator_tag, const Kme
 public:
 	IteratorKmerH5()  : iterator(0), pos(0) {}
 
-	IteratorKmerH5(Iterator<Kmer<>::Count>* iterator, const int kmer_size)  : iterator(iterator), pos(0)  {
-//		iterator->first();
-	}
+	IteratorKmerH5(Iterator<Kmer<>::Count>* iterator)  : iterator(iterator), pos(0)  { }
 
-	u_int64_t  const& operator*()  {
-		Kmer<>::Count& count = iterator->item();
-		u_int64_t kmer_int_value=oahash(count.value);
-		return kmer_int_value;
-		//cout << std::get<0>(iterator->item()) << endl;
-		//return 0;
-		//return _item;
-		//KmerLca kmerLca = iterator->item();
-		//cout << kmerLca.first << " " << kmerLca.second << endl;
-		//return kmerLca;
+	u_int64_t  const& operator*(){
+//		cout<<iterator<<endl;
+		return *new u_int64_t(iterator->item().value.getVal());
+//		Kmer<>::Count& count = iterator->item();
+//		return count.value;
+//		cout<<"count = "<<count.value<<" value = "<<oahash(count.value)<<endl;
+//		u_int64_t kmer_int_value=oahash(count.value);
+//		return *new u_int64_t(kmer_int_value); //QUESTION: pourquoi utiliser ce new ici. (sinon warning et valeur renvoyée = fausse, meme avec un return 42)
 	}
 
 	IteratorKmerH5& operator++()
@@ -59,30 +55,23 @@ public:
 private:
 	Iterator<Kmer<>::Count>* iterator;
 	unsigned long pos;
-	//KmerLca _item;
-	//u_int64_t _item;
 };
 
 
 
-//template<typename Key>
 class IteratorKmerH5Wrapper
 {
 public:
 	IteratorKmerH5Wrapper(){}
-	IteratorKmerH5Wrapper (Iterator<Kmer<>::Count>* iterator, const int kmer_size) : iterator(iterator), kmer_size(kmer_size) {}
+	IteratorKmerH5Wrapper (Iterator<Kmer<>::Count>* iterator) : iterator(iterator) {}
 	IteratorKmerH5Wrapper(IteratorKmerH5& copy){}
 
-	IteratorKmerH5 begin() const  {  return IteratorKmerH5 (iterator, kmer_size); }
+	IteratorKmerH5 begin() const  {  iterator->first(); return IteratorKmerH5 (iterator); }
 	IteratorKmerH5 end  () const  {  return IteratorKmerH5 ();         }
     size_t        size () const  {  return 0;                        }
 
 private:
-    // noncopyble // FIXME: made it copyable because boophf needed it; need to see if it's correct
-    //iterator_wrapper(iterator_wrapper const&);
-    //iterator_wrapper& operator=(iterator_wrapper const&);
     Iterator<Kmer<>::Count>* iterator;
-	int kmer_size;
 };
 
 
