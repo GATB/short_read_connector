@@ -51,10 +51,12 @@ public:
     // Actual job done by the tool is here
     void execute ();
 
-    void create_quasi_dictionary();
+    void create_quasi_dictionary(int fingerprint_size);
 
 
     void fill_quasi_dictionary();
+
+    void parse_query_sequences(int threshold);
 };
 
 /********************************************************************************/
