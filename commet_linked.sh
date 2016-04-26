@@ -1,5 +1,7 @@
-bank_set="data/c1.fasta.gz"
-query_set="data/c2.fasta.gz"
+bank_set="data/humch1_00096_reads.fasta.gz"
+query_set="data/humch1_00096_reads.fasta.gz"
+# bank_set="data/c1.fasta.gz"
+# query_set="data/c1.fasta.gz"
 result_file="associated_reads.txt"
 kmer_size=31
 abundance_min=2

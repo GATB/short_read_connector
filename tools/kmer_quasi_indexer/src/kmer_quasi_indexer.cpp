@@ -102,6 +102,15 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 
 }
 
+inline const bool containsN(char *seq){
+	int i=0;
+	while(1){
+		if (seq[i]=='\0') return false;
+		if (seq[i]=='N') return true;
+		++i;
+	}
+}
+
 /*********************************************************************
 ** METHOD  :
 ** PURPOSE :
@@ -127,6 +136,8 @@ void kmer_quasi_indexer::fill_quasi_dictionary (){
     {
         // We set the data from which we want to extract kmers.
         itKmer.setData (itSeq->getData());
+        if (containsN(itSeq->getDataBuffer())){continue;}
+//        cout<<itSeq->getDataBuffer();
         // We iterate the kmers.
         for (itKmer.first(); !itKmer.isDone(); itKmer.next())
         {
@@ -182,6 +193,7 @@ void kmer_quasi_indexer::parse_query_sequences (int threshold){
     for (itSeq.first(); !itSeq.isDone(); itSeq.next())
     {
 
+        if (containsN(itSeq->getDataBuffer())){continue;}
   	  vector<u_int32_t>similar_read_ids;
 
 
