@@ -54,9 +54,9 @@ public:
     void create_quasi_dictionary(int fingerprint_size);
 
 
-    void fill_quasi_dictionary();
+    void fill_quasi_dictionary(const int nbCores);
 
-    void parse_query_sequences(int threshold);
+    void parse_query_sequences(int threshold, const int nbCores);
 };
 
 /********************************************************************************/
