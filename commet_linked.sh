@@ -76,7 +76,7 @@ prefix=$OPTARG
 
 k)
 echo "use k=$OPTARG" >&2
-k=$OPTARG
+kmer_size=$OPTARG
 ;;
 
 
@@ -136,5 +136,16 @@ unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
 $EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${unsorted_result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size}
 
+# sort results
 sort -n ${unsorted_result_file} > ${result_file}
+
+
 rm -f ${unsorted_result_file}
+
+
+echo "***********************************"
+echo "comment_linked finished"
+echo "results in:"
+echo "\t "${result_file}
+echo "Contact: pierre.peterlongo@inria.fr"
+echo "***********************************"

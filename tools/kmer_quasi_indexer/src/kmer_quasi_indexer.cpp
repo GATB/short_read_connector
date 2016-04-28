@@ -61,8 +61,8 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 
 
 	double lg2 = log(2);
-	float NBITS_PER_KMER = log (16*kmer_size*(lg2*lg2))/(lg2*lg2);
-	NBITS_PER_KMER = 12;
+//	float NBITS_PER_KMER = log (16*kmer_size*(lg2*lg2))/(lg2*lg2);
+//	NBITS_PER_KMER = 12;
 	/** We get the number of solid kmers. */
 	const u_int64_t solidFileSize = solidKmers.getNbItems();
 	//	u_int64_t estimatedBloomSize = (u_int64_t) ((double)solidFileSize * NBITS_PER_KMER);
@@ -101,6 +101,33 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 
 
 }
+static int NT2int(char nt)  {  return (nt>>1)&3;  }
+
+/*********************************************************************
+ ** METHOD  :
+ ** PURPOSE :
+ ** INPUT   :
+ ** OUTPUT  :
+ ** RETURN  : True if the sequence is of high complexity else return false
+ ** REMARKS :
+ *********************************************************************/
+bool highComplexity(Sequence& seq){
+	const char* data = seq.getDataBuffer();
+    int DUSTSCORE[64]; // all tri-nucleotides
+    for (int i=0; i<64; i++) DUSTSCORE[i]=0;
+    size_t lenseq =seq.getDataSize();
+
+    for (int j=2; j<lenseq; ++j) ++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
+    int m,s=0;
+
+    for (int i=0; i<64; ++i)
+    {
+        m = DUSTSCORE[i];
+        s  += (m*(m-1))/2;
+    }
+
+    return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
+}
 
 inline const bool correctSequence(Sequence& s){
 
@@ -127,6 +154,7 @@ struct FunctorIndexer
 	{
 
 		if (!correctSequence(seq)){return;}
+		if (!highComplexity(seq)){return;} //TODO: a unique function for optimization
 		// We declare a canonical model with a given span size.
 		Kmer<KMER_SPAN(0)>::ModelCanonical model (kmer_size);
 		// We declare an iterator on a given sequence.
@@ -211,7 +239,7 @@ struct FunctorQuery
 	void operator() (Sequence& seq)
 	{
 
-		if (!correctSequence(seq)){
+		if (!correctSequence(seq) || !highComplexity(seq)){
 			synchro->lock ();
 			outFile<<seq.getIndex()<<" U"<<endl;
 			synchro->unlock ();
@@ -242,7 +270,7 @@ struct FunctorQuery
 		// We lock the synchronizer
 		synchro->lock ();
 		outFile<<seq.getIndex()<<" ";
-		u_int32_t prev_id=-1;
+		u_int32_t prev_id=-1; //TODO: trick for avoiding problem of unsigned value (get first id stored)
 		int nb_shared=0;
 		for (auto &element:similar_read_ids){
 			if(prev_id != element){
@@ -276,7 +304,7 @@ void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores
 	ofstream  outFile;
 	outFile.open (getInput()->getStr(STR_OUT_FILE));
 
-	outFile << "#query_read_id [target_read_id number_shared_kmers]* or U (unvalid read, containing not only ACGT characters)"<<endl;
+	outFile << "#query_read_id [target_read_id number_shared_"<<kmer_size<<"mers]* or U (unvalid read, containing not only ACGT characters or low complexity read)"<<endl;
 
 
 	LOCAL (bank);
