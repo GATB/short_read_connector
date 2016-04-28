@@ -2,6 +2,20 @@
 
 version="1.0.0"
 
+
+EDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+platform='mac'
+unamestr=`uname`
+if [[ "$unamestr" == 'Linux' ]]; then
+   platform='linux'
+fi
+
+dsk_bin=$EDIR/thirdparty/dsk/bin/macosx/dsk
+if [[ $platform == 'linux' ]]; then
+       $EDIR/thirdparty/dsk/bin/linux/dsk
+fi
+       
+
 function help {
 echo "commet_linked.sh. Compare reads from two read sets (distinct or not)"
 echo "Version "$version
@@ -114,11 +128,9 @@ out_dsk=${prefix}"_solid_kmers.h5"
 result_file=${prefix}".txt"
 
 
-EDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
 # Count kmers using dsk
 #
-$EDIR/thirdparty/dsk/bin/macosx/dsk -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk}
+${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk}
 
 unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
