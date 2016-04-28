@@ -43,7 +43,6 @@ private:
 	u_int64_t nbSolidKmers;
 	int kmer_size;
 	static const size_t span = KMER_SPAN(0);
-	std::mutex mylock;
 public:
 
     // Constructor
