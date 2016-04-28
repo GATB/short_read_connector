@@ -354,7 +354,7 @@ void kmer_quasi_indexer::execute ()
 
 	// We gather some statistics.
 
-	int nbCores = 1; //TODO: parameter
+	int nbCores = 0; //TODO: parameter
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 
 	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
