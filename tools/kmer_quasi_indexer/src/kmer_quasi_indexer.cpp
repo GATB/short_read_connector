@@ -111,7 +111,7 @@ static int NT2int(char nt)  {  return (nt>>1)&3;  }
  ** RETURN  : True if the sequence is of high complexity else return false
  ** REMARKS :
  *********************************************************************/
-bool highComplexity(Sequence& seq){
+inline bool highComplexity(Sequence& seq){
 	const char* data = seq.getDataBuffer();
     int DUSTSCORE[64]; // all tri-nucleotides
     for (int i=0; i<64; i++) DUSTSCORE[i]=0;
@@ -239,7 +239,7 @@ struct FunctorQuery
 	void operator() (Sequence& seq)
 	{
 
-		if (!correctSequence(seq) || !highComplexity(seq)){
+		if (!correctSequence(seq)){// || !highComplexity(seq)){
 			synchro->lock ();
 			outFile<<seq.getIndex()<<" U"<<endl;
 			synchro->unlock ();
