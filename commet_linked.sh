@@ -28,6 +28,7 @@ echo -e "\t\t    Example: -ref data/c2.fasta.gz"
 
 echo -e "\tOPTIONS:"
 echo -e "\t\t -p prefix. All out files will start with this prefix. Default=\"commet_linked_res\""
+echo -e "\t\t -g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
 echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=25"
 echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
 echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as similar. Default=20"
@@ -43,11 +44,12 @@ abundance_min=2
 fingerprint_size=8
 kmer_threshold=20
 prefix="commet_linked_res"
+remove=1
 
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts ":hb:q:p:k:a:t:" opt; do
+while getopts ":hgb:q:p:k:a:t:" opt; do
 case $opt in
 
 h)
@@ -73,6 +75,10 @@ echo "use prefix=$OPTARG" >&2
 prefix=$OPTARG
 ;;
 
+g)
+echo "reuse solid precomputed solid kmers if exists"
+remove=0
+;;
 
 k)
 echo "use k=$OPTARG" >&2
@@ -124,13 +130,18 @@ help
 exit 1
 fi
 
-out_dsk=${prefix}"_solid_kmers.h5"
+out_dsk=${prefix}"_solid_kmers_k"${kmer_size}".h5"
 result_file=${prefix}".txt"
 
 
-# Count kmers using dsk
-#
-${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk}
+if [ $remove -eq 1 ]; then
+	rm -f ${out_dsk}
+fi
+
+# Count kmers using dsk if file absent
+if [ ! -e ${out_dsk} ]; then
+       ${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk}
+fi 
 
 unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
@@ -146,6 +157,6 @@ rm -f ${unsorted_result_file}
 echo "***********************************"
 echo "comment_linked finished"
 echo "results in:"
-echo "\t "${result_file}
+echo "   "${result_file}
 echo "Contact: pierre.peterlongo@inria.fr"
 echo "***********************************"
