@@ -102,13 +102,15 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 
 }
 
-inline const bool containsN(char *seq){
-	int i=0;
-	while(1){
-		if (seq[i]=='\0') return false;
-		if (seq[i]=='N') return true;
-		++i;
-	}
+inline const bool correctSequence(Sequence& s){
+
+	const char* data = s.getDataBuffer();
+
+    for (size_t i=0; i<s.getDataSize(); i++)
+    {
+        if (data[i]!='A' && data[i]!='C' && data[i]!='G' && data[i]!='T')  { return false; }
+    }
+    return true;
 }
 
 // We define a functor that will be cloned by the dispatcher
@@ -124,7 +126,7 @@ struct FunctorIndexer
 	void operator() (Sequence& seq)
 	{
 
-		if (containsN(seq.getDataBuffer())){return;}
+		if (!correctSequence(seq)){return;}
 		// We declare a canonical model with a given span size.
 		Kmer<KMER_SPAN(0)>::ModelCanonical model (kmer_size);
 		// We declare an iterator on a given sequence.
@@ -139,10 +141,10 @@ struct FunctorIndexer
 			// Adding the read id to the list of ids associated to this kmer.
 			// note that the kmer may not exist in the dictionnary if it was under the solidity threshold.
 			// in this case, nothing is done
-			u_int32_t truc = static_cast<u_int32_t>(seq.getIndex());
-			synchro->lock();
-			quasiDico.set_value(itKmer->value().getVal(), truc);
-			synchro->unlock();
+			u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
+//			synchro->lock();
+			quasiDico.set_value(itKmer->value().getVal(), read_id, synchro);
+//			synchro->unlock();
 		}
 	}
 };
@@ -166,7 +168,7 @@ void kmer_quasi_indexer::fill_quasi_dictionary (const int nbCores){
 
 
 	// We create a dispatcher configured for 'nbCores' cores.
-	Dispatcher dispatcher (1, 1000);
+	Dispatcher dispatcher (1, 1000); // TODO: parallelisation sucks.
 	// We iterate the range.  NOTE: we could also use lambda expression (easing the code readability)
 	dispatcher.iterate (itSeq, FunctorIndexer(synchro,quasiDico, kmer_size));
 
@@ -209,12 +211,11 @@ struct FunctorQuery
 	void operator() (Sequence& seq)
 	{
 
-		if (containsN(seq.getDataBuffer())){
+		if (!correctSequence(seq)){
 			synchro->lock ();
 			outFile<<seq.getIndex()<<" U"<<endl;
 			synchro->unlock ();
 
-			//            __sync_fetch_and_add ( & read_id, 1); // read_id++;
 			return;}
 		// We declare a canonical model with a given span size.
 		Kmer<KMER_SPAN(0)>::ModelCanonical model (kmer_size);
@@ -275,7 +276,7 @@ void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores
 	ofstream  outFile;
 	outFile.open (getInput()->getStr(STR_OUT_FILE));
 
-	outFile << "#query_read_id [target_read_id number_shared_kmers]* or U (unvalid read, containing Ns)"<<endl;
+	outFile << "#query_read_id [target_read_id number_shared_kmers]* or U (unvalid read, containing not only ACGT characters)"<<endl;
 
 
 	LOCAL (bank);
@@ -353,7 +354,7 @@ void kmer_quasi_indexer::execute ()
 
 	// We gather some statistics.
 
-	int nbCores = 0; //TODO: parameter
+	int nbCores = 1; //TODO: parameter
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 
 	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
