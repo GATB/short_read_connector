@@ -12,7 +12,7 @@ fi
 
 dsk_bin=$EDIR/thirdparty/dsk/bin/macosx/dsk
 if [[ $platform == 'linux' ]]; then
-       $EDIR/thirdparty/dsk/bin/linux/dsk
+       dsk_bin=$EDIR/thirdparty/dsk/bin/linux/dsk
 fi
        
 
