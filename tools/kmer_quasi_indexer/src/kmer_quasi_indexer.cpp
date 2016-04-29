@@ -252,37 +252,68 @@ struct FunctorQuery
 
 		bool exists;
 		vector<u_int32_t> associated_read_ids;
-		vector<u_int32_t>similar_read_ids;
+//		vector<u_int32_t> similar_read_ids;
 
+
+
+		std::unordered_map<u_int32_t, std::pair <int,int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
 
 
 		// We set the data from which we want to extract kmers.
 		itKmer.setData (seq.getData());
 		// We iterate the kmers.
+		int i=0; // position on the read
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next())
 		{
 			quasiDico.get_value(itKmer->value().getVal(),exists,associated_read_ids);
-			similar_read_ids.insert(similar_read_ids.end(),associated_read_ids.begin(),associated_read_ids.end());
+
+			for(auto &read_id: associated_read_ids){
+				std::unordered_map<u_int32_t, std::pair <int,int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
+				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
+					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
+//					cout<<"create a new pair for "<<read_id<<" ("<<(i+kmer_size)<< ", 1)"<<endl;
+				}
+				else{  // a kmer is already shared with this read
+					std::pair <int,int> viablepos_nbshared = (element->second);
+//					cout<<"adding position "<<i<<" for kmer "<<read_id<<" ?"<<endl;
+//					cout<<i<<" >=? "<<viablepos_nbshared.first<<endl;
+					if(i>=viablepos_nbshared.first){ // the current position does not overlap the previous shared kmer
+//						cout<<"YES"<<endl;
+						viablepos_nbshared.first = i+kmer_size; // next non overlapping position
+						viablepos_nbshared.second = viablepos_nbshared.second+1; // a new kmer shared.
+						similar_read_ids_position_count[read_id] = viablepos_nbshared;
+					}
+//					else cout<<"NO"<<endl;
+//					cout<<"cupdated pair for "<<read_id<<" ("<<viablepos_nbshared.first<<", "<<viablepos_nbshared.second<< ")"<<endl;
+
+				}
+			}
+
+//			similar_read_ids.insert(similar_read_ids.end(),associated_read_ids.begin(),associated_read_ids.end());
+			i++;
 
 		}
-		sort(similar_read_ids.begin(),similar_read_ids.end());
+//		sort(similar_read_ids.begin(),similar_read_ids.end());
 
 		// We lock the synchronizer
 		synchro->lock ();
 		outFile<<seq.getIndex()<<" ";
-		u_int32_t prev_id=-1; //TODO: trick for avoiding problem of unsigned value (get first id stored)
-		int nb_shared=0;
-		for (auto &element:similar_read_ids){
-			if(prev_id != element){
-				if(prev_id!=-1){
-					if(nb_shared>threshold)
-						outFile<<"["<<prev_id<<" "<<nb_shared<<"] ";
-				}
-				nb_shared=0;
-				prev_id=element;
-			}
-			nb_shared++;
+		for (auto &matched_read:similar_read_ids_position_count){
+			if (std::get<1>(matched_read.second) >threshold) outFile<<"["<<matched_read.first<<" "<<std::get<1>(matched_read.second)<<"] ";
 		}
+//		u_int32_t prev_id=-1; //TODO: trick for avoiding problem of unsigned value (get first id stored)
+//		int nb_shared=0;
+//		for (auto &element:similar_read_ids){
+//			if(prev_id != element){
+//				if(prev_id!=-1){
+//					if(nb_shared>threshold)
+//						outFile<<"["<<prev_id<<" "<<nb_shared<<"] ";
+//				}
+//				nb_shared=0;
+//				prev_id=element;
+//			}
+//			nb_shared++;
+//		}
 		outFile<<endl;
 		// We unlock the synchronizer
 		synchro->unlock ();

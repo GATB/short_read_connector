@@ -22,16 +22,16 @@ echo "Version "$version
 echo "Usage: sh commet_linked.sh -b read_file_of_files -q read_file_of_files [OPTIONS]"
 echo -e "\tMANDATORY:"
 echo -e "\t\t -b read_file_of_files for bank"
-echo -e "\t\t    Example: -ref data/c1.fasta.gz"
-echo -e "\t\t -r read_file_of_files for query"
-echo -e "\t\t    Example: -ref data/c2.fasta.gz"
+echo -e "\t\t    Example: -b data/c1.fasta.gz"
+echo -e "\t\t -q read_file_of_files for query"
+echo -e "\t\t    Example: -q data/c2.fasta.gz"
 
 echo -e "\tOPTIONS:"
 echo -e "\t\t -p prefix. All out files will start with this prefix. Default=\"commet_linked_res\""
 echo -e "\t\t -g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
 echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=25"
 echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
-echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as similar. Default=20"
+echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as similar. Default=3"
 #echo "Any further question: read the readme file or contact us via the Biostar forum: https://www.biostars.org/t/discosnp/"
 }
 
@@ -42,7 +42,7 @@ query_set=""
 kmer_size=25
 abundance_min=2
 fingerprint_size=8
-kmer_threshold=20
+kmer_threshold=3
 prefix="commet_linked_res"
 remove=1
 
@@ -143,15 +143,15 @@ if [ ! -e ${out_dsk} ]; then
        ${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk}
 fi 
 
-unsorted_result_file=${result_file}"_unsorted"
+#unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
-$EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${unsorted_result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size}
+$EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size}
 
 # sort results
-sort -n ${unsorted_result_file} > ${result_file}
+#sort -n ${unsorted_result_file} > ${result_file}
 
 
-rm -f ${unsorted_result_file}
+#rm -f ${unsorted_result_file}
 
 
 echo "***********************************"
