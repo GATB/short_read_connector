@@ -21,6 +21,7 @@
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
+#include <malloc/malloc.h>
 #include "IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionnary/src/quasidictionnary.h"
 /********************************************************************************/
@@ -39,7 +40,7 @@
 class kmer_quasi_indexer : public Tool
 {
 private:
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper > quasiDico;
 	u_int64_t nbSolidKmers;
 	int kmer_size;
 	static const size_t span = KMER_SPAN(0);
