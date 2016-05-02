@@ -416,8 +416,15 @@ void kmer_quasi_indexer::execute ()
 	int nbCores = 0; //TODO: parameter
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 
-	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
-		fingerprint_size=0;
+
+	// IMPORTANT NOTE:
+		// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
+		// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
+		// values are gonna be stored for all kmers. This is why I currently us a vector<u_int32_t> for storing read ids associated to a kmer.
+
+		// We need a non null finger print because of non solid non indexed kmers
+	//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
+	//		fingerprint_size=0;
 	cout<<"fingerprint = "<<fingerprint_size<<endl;
 	create_quasi_dictionary(fingerprint_size);
 	fill_quasi_dictionary(nbCores);
