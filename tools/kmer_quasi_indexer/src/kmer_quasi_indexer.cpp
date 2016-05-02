@@ -59,8 +59,15 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 	Partition<Kmer<>::Count>& solidKmers = dskGroup.getPartition<Kmer<>::Count> ("solid");
 
 
+
+	double lg2 = log(2);
+//	float NBITS_PER_KMER = log (16*kmer_size*(lg2*lg2))/(lg2*lg2);
+//	NBITS_PER_KMER = 12;
 	/** We get the number of solid kmers. */
 	const u_int64_t solidFileSize = solidKmers.getNbItems();
+	//	u_int64_t estimatedBloomSize = (u_int64_t) ((double)solidFileSize * NBITS_PER_KMER);
+	//	if (estimatedBloomSize ==0 ) { estimatedBloomSize = 1000; }
+	//	int nb_hash				= 7;
 
 
 	nbSolidKmers = solidKmers.getNbItems();
@@ -69,42 +76,30 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
 
-	//////////////// CREATION QUASI_DICTIONARY
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper> (nbSolidKmers, iteratorOnKmers, fingerprint_size);
-
-	cout<<"Allocating space for read ids"<<endl;
-	// We create an iterator for our [kmer,abundance] values
-	ProgressIterator<Kmer<>::Count> iter (solidKmers);
-	// We iterate the solid kmers from the retrieved collection
-	for (iter.first(); !iter.isDone(); iter.next())
-	{
-		// shortcut
-		Kmer<>::Count& count = iter.item();
-		bool exists;
-		u_int64_t index = quasiDico.get_index(count.value.getVal(), exists);
-		if (!exists) {
-			cerr<<"Impossible : a kmer should have an entry"<<endl;
-			exit(1);
-		}
-		u_int32_t* ids_array_one_kmer = (u_int32_t*) calloc(count.abundance, sizeof(u_int32_t));
-		if(!ids_array_one_kmer){
-			cerr<<"Cannot allocate memory"<<endl;
-			exit(1);
-		}
-		for(size_t i=0;i<count.abundance;i++) ids_array_one_kmer[i]=0;
-		quasiDico.set_value_known_address(index, ids_array_one_kmer);
+	//	int i=0;
+	//    cout << "---------------------------------------------------- " << endl;
+	//
+	//
+	//	for(auto  &element: iteratorOnKmers){
+	//		cout<<"first  "<<element<<endl;
+	//	}
+	//
+	//    cout << "---------------------------------------------------- " << endl;
+	//	i=0;
+	//	for(auto  &element : iteratorOnKmers){
+	//		i++;
+	//		if (i<10) {cout<<"next 10: "<<element<<endl;}
+	//		else break;
+	//	}
+	//    cout << "---------------------------------------------------- " << endl;
 
 
-	}
 
-	// Here the quasi dico contains a vector of nbSolidKmers * (u_int32_t*)
-	// Each value is an array of elements. Each element is a kmer and contains c entries, the count associated to the kmer.
-	// We allocate memory for each of these elements:
+	//	quasiDico = quasiDictionnary<IteratorKmerH5, std::vector< list<u_int32_t> > (nbSolidKmers, iteratorOnKmers, all_list.begin(), fingerprint_size, sizeof(list<u_int32_t>));
+	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size);
 
-//	for(auto & kmercount=solidKmers.iterator()->first(); kmercount != solidKmers.iterator()->end(); kmercount++){
-//	for(auto & kmercount: solidKmers.iterator()){
 
-//	}
+
 }
 static int NT2int(char nt)  {  return (nt>>1)&3;  }
 
@@ -150,9 +145,9 @@ struct FunctorIndexer
 {
 
 	ISynchronizer* synchro;
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper> &quasiDico;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
-	FunctorIndexer (ISynchronizer* synchro, quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper>& quasiDico, int kmer_size)  : synchro(synchro), quasiDico(quasiDico), kmer_size(kmer_size) {
+	FunctorIndexer (ISynchronizer* synchro, quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  : synchro(synchro), quasiDico(quasiDico), kmer_size(kmer_size) {
 
 	}
 	void operator() (Sequence& seq)
@@ -176,17 +171,7 @@ struct FunctorIndexer
 			// in this case, nothing is done
 			u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
 //			synchro->lock();
-//			quasiDico.set_value(itKmer->value().getVal(), read_id, synchro);
-			// parcours des cases du quasiDico.set_value(itKmer->value().getVal()) et ajout de read_id+1 à la premiere position == 0
-			bool exists;
-			u_int32_t* ids_array = (u_int32_t*) quasiDico.get_value(itKmer->value().getVal(), exists);
-			if(!exists){continue;}
-			for(size_t i=0;;i++){
-				cout<<"i "<<i<<" "<<ids_array[i]<<endl;
-				if(ids_array[i]) continue; // BUG ICI: si le tableau est plein on tombe chez les voisins; Mais il ne devrait jamais etre plein...
-				ids_array[i]=read_id+1; // + 1 avoids the 0 id value, considered as non informed
-				break;
-			}
+			quasiDico.set_value(itKmer->value().getVal(), read_id, synchro);
 //			synchro->unlock();
 		}
 	}
@@ -245,10 +230,10 @@ struct FunctorQuery
 	ISynchronizer* synchro;
 	ofstream& outFile;
 	int kmer_size;
-	const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper > &quasiDico;
+	const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	const int threshold;
 
-	FunctorQuery (ISynchronizer* synchro, ofstream& outFile,  const int kmer_size, const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper> &quasiDico, const int threshold)  : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
+	FunctorQuery (ISynchronizer* synchro, ofstream& outFile,  const int kmer_size, const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico, const int threshold)  : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 
 	}
 	void operator() (Sequence& seq)
@@ -266,7 +251,7 @@ struct FunctorQuery
 		Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator itKmer(model);
 
 		bool exists;
-		u_int32_t* associated_read_ids;
+		vector<u_int32_t> associated_read_ids;
 //		vector<u_int32_t> similar_read_ids;
 
 
@@ -280,11 +265,9 @@ struct FunctorQuery
 		int i=0; // position on the read
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next())
 		{
-			associated_read_ids=(u_int32_t *)quasiDico.get_value(itKmer->value().getVal(),exists);
-			if(!exists) continue;
-			int nb_elem = malloc_size(associated_read_ids)/sizeof(associated_read_ids[0]); // OUPS: only on mac
-			for(int i=0;i<nb_elem;i++){
-				u_int32_t read_id = associated_read_ids[i];
+			quasiDico.get_value(itKmer->value().getVal(),exists,associated_read_ids);
+
+			for(auto &read_id: associated_read_ids){
 				std::unordered_map<u_int32_t, std::pair <int,int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
 					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
@@ -314,7 +297,7 @@ struct FunctorQuery
 
 		// We lock the synchronizer
 		synchro->lock ();
-		outFile<<seq.getIndex()+1<<" ";
+		outFile<<seq.getIndex()<<" ";
 		for (auto &matched_read:similar_read_ids_position_count){
 			if (std::get<1>(matched_read.second) >threshold) outFile<<"["<<matched_read.first<<" "<<std::get<1>(matched_read.second)<<"] ";
 		}
