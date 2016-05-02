@@ -450,7 +450,6 @@ void kmer_quasi_indexer::execute ()
 //	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
 //		fingerprint_size=0;
 
-	cout<<"fingerprint = "<<fingerprint_size<<endl;
 	create_quasi_dictionary(fingerprint_size);
 	fill_quasi_dictionary(nbCores);
 
