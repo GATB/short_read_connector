@@ -21,6 +21,7 @@
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
+#include <malloc/malloc.h>
 #include "IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionnary/src/quasidictionnary.h"
 /********************************************************************************/
