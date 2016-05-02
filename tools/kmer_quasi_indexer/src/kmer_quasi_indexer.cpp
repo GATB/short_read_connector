@@ -86,12 +86,15 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 			cerr<<"Impossible : a kmer should have an entry"<<endl;
 			exit(1);
 		}
-		u_int32_t* ids_array_one_kmer = (u_int32_t*) calloc(count.abundance, sizeof(u_int32_t));
-		if(!ids_array_one_kmer){
-			cerr<<"Cannot allocate memory"<<endl;
-			exit(1);
-		}
-		for(size_t i=0;i<count.abundance;i++) ids_array_one_kmer[i]=0;
+		vector<u_int32_t>* ids_array_one_kmer  = new vector<u_int32_t>(count.abundance);
+//		u_int32_t* ids_array_one_kmer = (u_int32_t*) calloc(count.abundance+1, sizeof(u_int32_t));
+//		if(!ids_array_one_kmer){
+//			cerr<<"Cannot allocate memory"<<endl;
+//			exit(1);
+//		}
+//		cout<<"alloc "<<count.abundance<<" for "<<count.value.getVal()<<endl;
+//		ids_array_one_kmer[0]=0; // last used position (== number of inserted elements)
+//		for(size_t i=0;i<count.abundance;i++) ids_array_one_kmer[i]=0;
 		quasiDico.set_value_known_address(index, ids_array_one_kmer);
 
 
@@ -179,14 +182,20 @@ struct FunctorIndexer
 //			quasiDico.set_value(itKmer->value().getVal(), read_id, synchro);
 			// parcours des cases du quasiDico.set_value(itKmer->value().getVal()) et ajout de read_id+1 à la premiere position == 0
 			bool exists;
-			u_int32_t* ids_array = (u_int32_t*) quasiDico.get_value(itKmer->value().getVal(), exists);
+			vector<u_int32_t>* ids_array = (vector<u_int32_t>*) quasiDico.get_value(itKmer->value().getVal(), exists);
 			if(!exists){continue;}
-			for(size_t i=0;;i++){
-				cout<<"i "<<i<<" "<<ids_array[i]<<endl;
-				if(ids_array[i]) continue; // BUG ICI: si le tableau est plein on tombe chez les voisins; Mais il ne devrait jamais etre plein...
-				ids_array[i]=read_id+1; // + 1 avoids the 0 id value, considered as non informed
-				break;
-			}
+			ids_array->push_back(read_id);
+//			cout<<"For "<<itKmer->value().getVal()<<endl;
+//			cout<<"avt "<<"ids_array["<<ids_array[0]+1<<" ] = "<<ids_array[ids_array[0]+1]<<endl;
+//			ids_array[ids_array[0]+1]=read_id+1;
+//			cout<<"aps "<<"ids_array["<<ids_array[0]+1<<" ] = "<<ids_array[ids_array[0]+1]<<endl;
+//			ids_array[0]++;
+//			for(size_t i=1;i<ids_array[0]+1;i++){
+//				cout<<"i "<<i<<" "<<ids_array[i]<<endl;
+//				if(ids_array[i]) continue; // BUG ICI: si le tableau est plein on tombe chez les voisins; Mais il ne devrait jamais etre plein...
+//				ids_array[i]=read_id+1; // + 1 avoids the 0 id value, considered as non informed
+//				break;
+//			}
 //			synchro->unlock();
 		}
 	}
@@ -266,7 +275,7 @@ struct FunctorQuery
 		Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator itKmer(model);
 
 		bool exists;
-		u_int32_t* associated_read_ids;
+		vector<u_int32_t>* associated_read_ids;
 //		vector<u_int32_t> similar_read_ids;
 
 
@@ -280,11 +289,10 @@ struct FunctorQuery
 		int i=0; // position on the read
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next())
 		{
-			associated_read_ids=(u_int32_t *)quasiDico.get_value(itKmer->value().getVal(),exists);
+			associated_read_ids=(vector<u_int32_t>*)quasiDico.get_value(itKmer->value().getVal(),exists);
 			if(!exists) continue;
-			int nb_elem = malloc_size(associated_read_ids)/sizeof(associated_read_ids[0]); // OUPS: only on mac
-			for(int i=0;i<nb_elem;i++){
-				u_int32_t read_id = associated_read_ids[i];
+			for(std::vector<u_int32_t>::iterator it = associated_read_ids->begin(); it != associated_read_ids->end(); ++it) {
+				const u_int32_t read_id=*it;
 				std::unordered_map<u_int32_t, std::pair <int,int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
 					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
@@ -314,7 +322,7 @@ struct FunctorQuery
 
 		// We lock the synchronizer
 		synchro->lock ();
-		outFile<<seq.getIndex()+1<<" ";
+		outFile<<seq.getIndex()<<" ";
 		for (auto &matched_read:similar_read_ids_position_count){
 			if (std::get<1>(matched_read.second) >threshold) outFile<<"["<<matched_read.first<<" "<<std::get<1>(matched_read.second)<<"] ";
 		}
@@ -433,8 +441,15 @@ void kmer_quasi_indexer::execute ()
 	int nbCores = 0; //TODO: parameter
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 
-	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
-		fingerprint_size=0;
+	// IMPORTANT NOTE:
+	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
+	// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
+	// values are gonna be stored for all kmers. This is why I currently us a vector<u_int32_t> for storing read ids associated to a kmer.
+
+	// We need a non null finger print because of non solid non indexed kmers
+//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
+//		fingerprint_size=0;
+
 	cout<<"fingerprint = "<<fingerprint_size<<endl;
 	create_quasi_dictionary(fingerprint_size);
 	fill_quasi_dictionary(nbCores);
@@ -446,6 +461,7 @@ void kmer_quasi_indexer::execute ()
 	getInfo()->add (1, "input");
 	getInfo()->add (2, "Reference bank:",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
 	getInfo()->add (2, "Query bank:",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+	getInfo()->add (2, "Kmer Size:", "%d", kmer_size);
 	getInfo()->add (2, "Fingerprint size:",  "%d",  fingerprint_size);
 	getInfo()->add (2, "Threshold size:",  "%d",  threshold);
 	getInfo()->add (1, "output");
