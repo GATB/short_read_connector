@@ -149,7 +149,7 @@ struct FunctorIndexer
 
 			quasiDico.set_value(itKmer->value().getVal(), read_id, synchro);
 //
-			cout<<model.toString(itKmer->value().getVal())<<" read id "<<read_id<<endl;
+//			cout<<model.toString(itKmer->value().getVal())<<" read id "<<read_id<<endl;
 			//			synchro->unlock();
 		}
 	}
