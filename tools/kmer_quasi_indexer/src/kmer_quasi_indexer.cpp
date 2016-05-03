@@ -311,7 +311,7 @@ void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores
 	ISynchronizer* synchro = System::thread().newSynchronizer();
 
 	// We create a dispatcher configured for 'nbCores' cores.
-	Dispatcher dispatcher (1, 1000);
+	Dispatcher dispatcher (nbCores, 1000);
 	// We iterate the range.  NOTE: we could also use lambda expression (easing the code readability)
 	dispatcher.iterate (itSeq, FunctorQuery(synchro,outFile, kmer_size, quasiDico, threshold));
 
