@@ -96,7 +96,7 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 
 
 	//	quasiDico = quasiDictionnary<IteratorKmerH5, std::vector< list<u_int32_t> > (nbSolidKmers, iteratorOnKmers, all_list.begin(), fingerprint_size, sizeof(list<u_int32_t>));
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size);
+	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 2); // gamma = 2
 
 
 
@@ -164,12 +164,12 @@ struct FunctorIndexer
 		itKmer.setData (seq.getData());
 		//        cout<<itSeq->getDataBuffer();
 		// We iterate the kmers.
+		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next())
 		{
 			// Adding the read id to the list of ids associated to this kmer.
 			// note that the kmer may not exist in the dictionnary if it was under the solidity threshold.
 			// in this case, nothing is done
-			u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
 //			synchro->lock();
 			quasiDico.set_value(itKmer->value().getVal(), read_id, synchro);
 //			synchro->unlock();
@@ -229,13 +229,24 @@ struct FunctorQuery
 {
 	ISynchronizer* synchro;
 	ofstream& outFile;
-	int kmer_size;
+	const int kmer_size;
 	const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	const int threshold;
+	// We declare a canonical model with a given span size.
+	Kmer<KMER_SPAN(0)>::ModelCanonical* model; //(kmer_size);
+	// We declare an iterator on a given sequence.
+	Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator* itKmer; //(model);
 
 	FunctorQuery (ISynchronizer* synchro, ofstream& outFile,  const int kmer_size, const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico, const int threshold)  : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
-
+		model = new Kmer<KMER_SPAN(0)>::ModelCanonical (kmer_size);
+		itKmer = new Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator (*model);
 	}
+
+	~FunctorQuery () { // TODO: put back these "delete". Currently (3 may 2016) they create a segfault.
+//		cout<<"HEY CEST FINI"<<endl;
+//			delete model; //= new Kmer<KMER_SPAN(0)>::ModelCanonical (kmer_size);
+//			delete itKmer; // = new Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator (*model);
+		}
 	void operator() (Sequence& seq)
 	{
 
@@ -245,10 +256,6 @@ struct FunctorQuery
 			synchro->unlock ();
 
 			return;}
-		// We declare a canonical model with a given span size.
-		Kmer<KMER_SPAN(0)>::ModelCanonical model (kmer_size);
-		// We declare an iterator on a given sequence.
-		Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator itKmer(model);
 
 		bool exists;
 		vector<u_int32_t> associated_read_ids;
@@ -256,19 +263,19 @@ struct FunctorQuery
 
 
 
-		std::unordered_map<u_int32_t, std::pair <int,int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
+		std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
 
 
 		// We set the data from which we want to extract kmers.
-		itKmer.setData (seq.getData());
+		itKmer->setData (seq.getData());
 		// We iterate the kmers.
 		int i=0; // position on the read
-		for (itKmer.first(); !itKmer.isDone(); itKmer.next())
+		for (itKmer->first(); !itKmer->isDone(); itKmer->next())
 		{
-			quasiDico.get_value(itKmer->value().getVal(),exists,associated_read_ids);
+			quasiDico.get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 
 			for(auto &read_id: associated_read_ids){
-				std::unordered_map<u_int32_t, std::pair <int,int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
+				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
 					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
 //					cout<<"create a new pair for "<<read_id<<" ("<<(i+kmer_size)<< ", 1)"<<endl;
@@ -296,27 +303,23 @@ struct FunctorQuery
 //		sort(similar_read_ids.begin(),similar_read_ids.end());
 
 		// We lock the synchronizer
-		synchro->lock ();
-		outFile<<seq.getIndex()<<" ";
+
+		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
 		for (auto &matched_read:similar_read_ids_position_count){
-			if (std::get<1>(matched_read.second) >threshold) outFile<<"["<<matched_read.first<<" "<<std::get<1>(matched_read.second)<<"] ";
+			if (std::get<1>(matched_read.second) >threshold) {
+				if (!read_id_printed){
+					read_id_printed=true;
+					synchro->lock ();
+					outFile<<seq.getIndex()<<" ";
+				}
+				outFile<<"["<<matched_read.first<<" "<<std::get<1>(matched_read.second)<<"] ";
+			}
 		}
-//		u_int32_t prev_id=-1; //TODO: trick for avoiding problem of unsigned value (get first id stored)
-//		int nb_shared=0;
-//		for (auto &element:similar_read_ids){
-//			if(prev_id != element){
-//				if(prev_id!=-1){
-//					if(nb_shared>threshold)
-//						outFile<<"["<<prev_id<<" "<<nb_shared<<"] ";
-//				}
-//				nb_shared=0;
-//				prev_id=element;
-//			}
-//			nb_shared++;
-//		}
-		outFile<<endl;
-		// We unlock the synchronizer
-		synchro->unlock ();
+		if(read_id_printed){
+			outFile<<endl;
+			// We unlock the synchronizer
+			synchro->unlock ();
+		}
 	}
 };
 
