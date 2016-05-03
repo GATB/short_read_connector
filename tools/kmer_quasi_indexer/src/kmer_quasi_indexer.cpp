@@ -212,9 +212,15 @@ struct FunctorQuery
 	{
 
 		if (!correctSequence(seq)){// || !highComplexity(seq)){
+<<<<<<< HEAD
 			//			synchro->lock ();
 			//			outFile<<seq.getIndex()<<" U"<<endl;
 			//			synchro->unlock ();
+=======
+//			synchro->lock ();
+//			outFile<<seq.getIndex()<<" U"<<endl;
+//			synchro->unlock ();
+>>>>>>> tempd47d115
 
 			return;}
 
@@ -230,11 +236,12 @@ struct FunctorQuery
 		// We set the data from which we want to extract kmers.
 		itKmer->setData (seq.getData());
 		// We iterate the kmers.
-		int i=0; // position on the read
-		for (itKmer->first(); !itKmer->isDone(); itKmer->next())
+
+		u_int i=0; // position on the read
+		for (itKmer.first(); !itKmer.isDone(); itKmer.next())
 		{
-			quasiDico.get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
-			if(!exists) continue;
+			quasiDico.get_value(itKmer->value().getVal(),exists,associated_read_ids);
+			if(!exists) {i++;continue;}
 			for(auto &read_id: associated_read_ids){
 				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
@@ -261,10 +268,6 @@ struct FunctorQuery
 			i++;
 
 		}
-		//		sort(similar_read_ids.begin(),similar_read_ids.end());
-
-		// We lock the synchronizer
-
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
 		for (auto &matched_read:similar_read_ids_position_count){
 			if (std::get<1>(matched_read.second) >threshold) {
