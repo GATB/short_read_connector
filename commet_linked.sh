@@ -14,7 +14,7 @@ dsk_bin=$EDIR/thirdparty/dsk/bin/macosx/dsk
 if [[ $platform == 'linux' ]]; then
        dsk_bin=$EDIR/thirdparty/dsk/bin/linux/dsk
 fi
-       
+
 
 function help {
 echo "commet_linked.sh. Compare reads from two read sets (distinct or not)"
@@ -39,7 +39,7 @@ echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as
 
 bank_set=""
 query_set=""
-kmer_size=25
+kmer_size=31
 abundance_min=2
 fingerprint_size=8
 kmer_threshold=3
@@ -54,7 +54,7 @@ case $opt in
 
 h)
 help
-exit 
+exit
 ;;
 
 b)
@@ -141,11 +141,11 @@ fi
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
        ${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk}
-fi 
+fi
 
 #unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
-$EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size}
+time $EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size}
 
 # sort results
 #sort -n ${unsorted_result_file} > ${result_file}
