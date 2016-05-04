@@ -88,7 +88,9 @@ bool highComplexity(Sequence& seq){
 	for (int i=0; i<64; i++) DUSTSCORE[i]=0;
 	size_t lenseq =seq.getDataSize();
 
-	for (int j=2; j<lenseq; ++j){ ++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];}
+	for (int j=2; j<lenseq; ++j){
+		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
+	}
 	int m,s=0;
 
 	for (int i=0; i<64; ++i)
@@ -113,6 +115,32 @@ const bool correctSequence(Sequence& s){
 }
 
 
+bool correct(Sequence& seq){
+	const char* data = seq.getDataBuffer();
+	int DUSTSCORE[64]; // all tri-nucleotides
+	for (int i=0; i<64; i++){
+		DUSTSCORE[i]=0;//TODO opti
+	}
+	size_t lenseq =seq.getDataSize();
+	if (data[0]!='A' && data[0]!='C' && data[0]!='G' && data[0]!='T')  { return false; }
+	if (data[1]!='A' && data[1]!='C' && data[1]!='G' && data[1]!='T')  { return false; }
+
+	for (int j=2; j<lenseq; ++j){
+		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
+		if (data[j]!='A' && data[j]!='C' && data[j]!='G' && data[j]!='T')  { return false; }
+	}
+	int m,s=0;
+
+	for (int i=0; i<64; ++i)
+	{
+		m = DUSTSCORE[i];
+		s  += (m*(m-1))/2;
+	}
+
+	return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
+}
+
+
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
@@ -130,9 +158,8 @@ struct FunctorIndexer
 
 	void operator() (Sequence& seq){
 
-		if (not correctSequence(seq) or not highComplexity(seq)){return;}
-		//TODO: a unique function for optimization
-
+		// if (not correctSequence(seq) or not highComplexity(seq)){return;}
+		if(not correct(seq)){return;}
 		// We create an iterator over this bank.
 		// We set the data from which we want to extract kmers.
 		itKmer->setData (seq.getData());
@@ -170,8 +197,7 @@ void kmer_quasi_indexer::fill_quasi_dictionary (const int nbCores){
 	ISynchronizer* synchro = System::thread().newSynchronizer();
 
 	// We create a dispatcher configured for 'nbCores' cores.
-	Dispatcher dispatcher (1, 10000); // TODO: parallelisation sucks.
-	// We iterate the range.  NOTE: we could also use lambda expression (easing the code readability)
+	Dispatcher dispatcher (1, 10000);
 	dispatcher.iterate (itSeq, FunctorIndexer(synchro,quasiDico, kmer_size));
 
 	delete synchro;
@@ -201,9 +227,10 @@ struct FunctorQuery
 	void operator() (Sequence& seq)
 	{
 
-		if (not correctSequence(seq) or  not highComplexity(seq)){
-			return;
-		}
+		// if (not correctSequence(seq) or  not highComplexity(seq)){
+		// 	return;
+		// }
+		if(not correct(seq)){return;}
 
 		bool exists;
 		vector<u_int32_t> associated_read_ids;
