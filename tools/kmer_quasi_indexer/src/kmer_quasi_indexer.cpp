@@ -1,9 +1,7 @@
 #include <kmer_quasi_indexer.hpp>
 
+
 using namespace std;
-
-
-
 
 
 /********************************************************************************/
@@ -54,24 +52,22 @@ void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 	// We get the group for dsk
 	Group& dskGroup = storage->getGroup("dsk");
 	kmer_size = atoi(dskGroup.getProperty("kmer_size").c_str());
-
 	// We get the solid kmers collection 1) from the 'dsk' group  2) from the 'solid' collection
 	Partition<Kmer<>::Count>& solidKmers = dskGroup.getPartition<Kmer<>::Count> ("solid");
-
-	/** We get the number of solid kmers. */
 	nbSolidKmers = solidKmers.getNbItems();
 	if(nbSolidKmers==0){
 		cout<<"No solid kmers in bank -- exit"<<endl;
 		exit(0);
 	}
-
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-
-		quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10); // gamma = 10
+	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
+	// gamma = 10
 }
 
 
-static int NT2int(char nt)  {  return (nt>>1)&3;  }
+static int NT2int(char nt){
+	return (nt>>1)&3;
+}
 
 
 /*********************************************************************
@@ -87,29 +83,25 @@ bool highComplexity(Sequence& seq){
 	int DUSTSCORE[64]; // all tri-nucleotides
 	for (int i=0; i<64; i++) DUSTSCORE[i]=0;
 	size_t lenseq =seq.getDataSize();
-
 	for (int j=2; j<lenseq; ++j){
 		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
 	}
 	int m,s=0;
-
 	for (int i=0; i<64; ++i)
 	{
 		m = DUSTSCORE[i];
 		s  += (m*(m-1))/2;
 	}
-
 	return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
 }
 
 
 const bool correctSequence(Sequence& s){
-
 	const char* data = s.getDataBuffer();
-
-	for (size_t i=0; i<s.getDataSize(); i++)
-	{
-		if (data[i]!='A' && data[i]!='C' && data[i]!='G' && data[i]!='T')  { return false; }
+	for (size_t i=0; i<s.getDataSize(); i++){
+		if (data[i]!='A' && data[i]!='C' && data[i]!='G' && data[i]!='T'){
+			return false;
+		}
 	}
 	return true;
 }
@@ -147,33 +139,30 @@ struct FunctorIndexer
 	ISynchronizer* synchro;
 	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
-	// We declare a canonical model with a given span size.
-	// We declare an iterator on a given sequence.
-	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
 
 	FunctorIndexer(ISynchronizer* synchro, quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  : synchro(synchro), quasiDico(quasiDico), kmer_size(kmer_size) {
-		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
-		itKmer = new  Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator  (model);
 	}
 
 	void operator() (Sequence& seq){
-
 		// if (not correctSequence(seq) or not highComplexity(seq)){return;}
 		if(not correct(seq)){return;}
 		// We create an iterator over this bank.
 		// We set the data from which we want to extract kmers.
-		itKmer->setData (seq.getData());
+		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
+		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
+		itKmer.setData (seq.getData());
 		// We iterate the kmers.
 		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
-		for (itKmer->first(); !itKmer->isDone(); itKmer->next())
-		{
+		// synchro->lock();
+		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.
 			// note that the kmer may not exist in the dictionnary if it was under the solidity threshold.
 			// in this case, nothing is done
-						// synchro->lock();
-			quasiDico.set_value((*itKmer)->value().getVal(), read_id, synchro);
-						// synchro->unlock();
+			// synchro->lock();
+			quasiDico.set_value((itKmer)->value().getVal(), read_id);
+			// synchro->unlock();
 		}
+		// synchro->unlock();
 	}
 };
 
@@ -197,7 +186,7 @@ void kmer_quasi_indexer::fill_quasi_dictionary (const int nbCores){
 	ISynchronizer* synchro = System::thread().newSynchronizer();
 
 	// We create a dispatcher configured for 'nbCores' cores.
-	Dispatcher dispatcher (1, 10000);
+	Dispatcher dispatcher (nbCores, 10000);
 	dispatcher.iterate (itSeq, FunctorIndexer(synchro,quasiDico, kmer_size));
 
 	delete synchro;
@@ -212,16 +201,12 @@ struct FunctorQuery
 	const int kmer_size;
 	const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	const int threshold;
-	// Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator* itKmer;
 
 	FunctorQuery (ISynchronizer* synchro, ofstream* outFile,  const int kmer_size, const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico, const int threshold)  : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
-		// Kmer<KMER_SPAN(0)>::ModelCanonical model(kmer_size);
-		// itKmer = new Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator (model);
+
 	}
 
-	~FunctorQuery () { // TODO: put back these "delete". Currently (3 may 2016) they create a segfault.
-				// cout<<"HEY CEST FINI"<<endl;
-				// 	delete itKmer; // = new Kmer<KMER_SPAN(0)>::ModelCanonical::Iterator (*model);
+	~FunctorQuery () {
 	}
 
 	void operator() (Sequence& seq)
@@ -285,19 +270,12 @@ struct FunctorQuery
 };
 
 
-/*********************************************************************
- ** METHOD  :
- ** PURPOSE :
- ** INPUT   :
- ** OUTPUT  :
- ** RETURN  :
- ** REMARKS :
- *********************************************************************/
 void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores){
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
 
 	ofstream  outFile;
+	//TODO ofstream to low level printf
 	outFile.open (getInput()->getStr(STR_OUT_FILE));
 
 	outFile << "#query_read_id [target_read_id number_shared_"<<kmer_size<<"mers]* or U (unvalid read, containing not only ACGT characters or low complexity read)"<<endl;
@@ -320,14 +298,6 @@ void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores
 }
 
 
-/*********************************************************************
- ** METHOD  :
- ** PURPOSE :
- ** INPUT   :
- ** OUTPUT  :
- ** RETURN  :
- ** REMARKS :
- *********************************************************************/
 void kmer_quasi_indexer::execute (){
 	// We can do here anything we want.
 	// For further information about the Tool class, please have a look

@@ -38,11 +38,13 @@
 
 class kmer_quasi_indexer : public Tool
 {
+	
 private:
 	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
 	u_int64_t nbSolidKmers;
 	int kmer_size;
-	static const size_t span = KMER_SPAN(0);
+	static const size_t span = KMER_SPAN(1);
+
 public:
 
     // Constructor
@@ -53,7 +55,6 @@ public:
 
     void create_quasi_dictionary(int fingerprint_size);
 
-
     void fill_quasi_dictionary(const int nbCores);
 
     void parse_query_sequences(int threshold, const int nbCores);
@@ -62,4 +63,3 @@ public:
 /********************************************************************************/
 
 #endif /* _TOOL_kmer_quasi_indexer_HPP_ */
-

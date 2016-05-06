@@ -29,7 +29,7 @@ echo -e "\t\t    Example: -q data/c2.fasta.gz"
 echo -e "\tOPTIONS:"
 echo -e "\t\t -p prefix. All out files will start with this prefix. Default=\"commet_linked_res\""
 echo -e "\t\t -g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
-echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=25"
+echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
 echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
 echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as similar. Default=3"
 #echo "Any further question: read the readme file or contact us via the Biostar forum: https://www.biostars.org/t/discosnp/"
@@ -140,7 +140,7 @@ fi
 
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-       ${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk}
+       ${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all
 fi
 
 #unsorted_result_file=${result_file}"_unsorted"
