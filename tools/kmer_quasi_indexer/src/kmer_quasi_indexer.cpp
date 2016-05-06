@@ -13,6 +13,7 @@ static const char* STR_URI_QUERY_INPUT = "-query";
 static const char* STR_FINGERPRINT = "-fingerprint_size";
 static const char* STR_THRESHOLD = "-kmer_threshold";
 static const char* STR_OUT_FILE = "-out";
+static const char* STR_CORE = "-core";
 
 
 kmer_quasi_indexer::kmer_quasi_indexer ()  : Tool ("kmer_quasi_indexer"){
@@ -24,6 +25,7 @@ kmer_quasi_indexer::kmer_quasi_indexer ()  : Tool ("kmer_quasi_indexer"){
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
 	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal number of shared kmers for considering 2 reads as similar",    false, "10"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
+	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
 }
 
 
@@ -55,10 +57,8 @@ static int NT2int(char nt){
 
 bool correct(Sequence& seq){
 	const char* data = seq.getDataBuffer();
-	int DUSTSCORE[64]; // all tri-nucleotides
-	for (int i=0; i<64; ++i){
-		DUSTSCORE[i]=0;//TODO opti
-	}
+	int DUSTSCORE[64]={0}; // all tri-nucleotides
+
 	size_t lenseq =seq.getDataSize();
 	if (data[0]!='A' && data[0]!='C' && data[0]!='G' && data[0]!='T')  { return false; }
 	if (data[1]!='A' && data[1]!='C' && data[1]!='G' && data[1]!='T')  { return false; }
@@ -204,7 +204,7 @@ void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores
 
 
 void kmer_quasi_indexer::execute (){
-	int nbCores = 0; //TODO: parameter
+	int nbCores = getInput()->getInt(STR_CORE);
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers

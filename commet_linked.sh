@@ -32,6 +32,7 @@ echo -e "\t\t -g: with this option, if a file of solid kmer exists with same pre
 echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
 echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
 echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as similar. Default=3"
+echo -e "\t\t -c: number of core used. Default=1"
 #echo "Any further question: read the readme file or contact us via the Biostar forum: https://www.biostars.org/t/discosnp/"
 }
 
@@ -43,13 +44,14 @@ kmer_size=31
 abundance_min=2
 fingerprint_size=8
 kmer_threshold=3
+core_used=1
 prefix="commet_linked_res"
 remove=1
 
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts ":hgb:q:p:k:a:t:" opt; do
+while getopts ":hgb:q:p:k:a:t:c:" opt; do
 case $opt in
 
 h)
@@ -94,6 +96,11 @@ abundance_min=$OPTARG
 t)
 echo "use kmer_threshold=$OPTARG" >&2
 kmer_threshold=$OPTARG
+;;
+
+c)
+echo "use $OPTARG cores">&2
+core_used=$OPTARG
 ;;
 
        #
@@ -145,7 +152,7 @@ fi
 
 #unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
-time $EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size}
+time $EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
 
 # sort results
 #sort -n ${unsorted_result_file} > ${result_file}
