@@ -98,7 +98,7 @@ class bfile_iterator_first : public std::iterator<std::forward_iterator_tag, T>{
 private:
 	void advance()
 	{
-		_pos++;
+		++_pos;
 
 		if(_cptread >= _inbuff){
 			int res = fread(_buffer,sizeof(T),_buffsize,_is);
@@ -112,8 +112,8 @@ private:
 		}
 
 		_elem = _buffer[_cptread];
-		_cptread ++;
-		_cptread ++;
+		++_cptread;
+		++_cptread;
 	}
 	T _elem;
 	FILE * _is;
@@ -217,7 +217,7 @@ public:
 private:
 	void advance()
 	{
-		_pos++;
+		++_pos;
 
 		if(_cptread >= _inbuff)
 		{
@@ -233,7 +233,7 @@ private:
 		}
 
 		_elem = _buffer[_cptread];
-		_cptread ++;
+		++_cptread;
 	}
 	T _elem;
 	FILE * _is;

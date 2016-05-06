@@ -8,7 +8,6 @@ using namespace std;
 
 
 // We define some constant strings for names of command line parameters
-//static const char* STR_FOO = "-foo";
 static const char* STR_URI_BANK_INPUT = "-bank";
 static const char* STR_URI_QUERY_INPUT = "-query";
 static const char* STR_FINGERPRINT = "-fingerprint_size";
@@ -16,18 +15,10 @@ static const char* STR_THRESHOLD = "-kmer_threshold";
 static const char* STR_OUT_FILE = "-out";
 
 
-/*********************************************************************
- ** METHOD  :
- ** PURPOSE :
- ** INPUT   :
- ** OUTPUT  :
- ** RETURN  :
- ** REMARKS :
- *********************************************************************/
 kmer_quasi_indexer::kmer_quasi_indexer ()  : Tool ("kmer_quasi_indexer"){
 	// We add some custom arguments for command line interface
 	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
-	//    getParser()->push_back (new OptionOneParam (STR_VERBOSE,   "verbosity (0:no display, 1: display kmers, 2: display distrib",  false, "0"));
+	//getParser()->push_back (new OptionOneParam (STR_VERBOSE,   "verbosity (0:no display, 1: display kmers, 2: display distrib",  false, "0"));
 	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
@@ -36,14 +27,6 @@ kmer_quasi_indexer::kmer_quasi_indexer ()  : Tool ("kmer_quasi_indexer"){
 }
 
 
-/*********************************************************************
- ** METHOD  :
- ** PURPOSE :
- ** INPUT   :
- ** OUTPUT  :
- ** RETURN  :
- ** REMARKS :
- *********************************************************************/
 void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
 	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
@@ -70,47 +53,10 @@ static int NT2int(char nt){
 }
 
 
-/*********************************************************************
- ** METHOD  :
- ** PURPOSE :
- ** INPUT   :
- ** OUTPUT  :
- ** RETURN  : True if the sequence is of high complexity else return false
- ** REMARKS :
- *********************************************************************/
-bool highComplexity(Sequence& seq){
-	const char* data = seq.getDataBuffer();
-	int DUSTSCORE[64]; // all tri-nucleotides
-	for (int i=0; i<64; i++) DUSTSCORE[i]=0;
-	size_t lenseq =seq.getDataSize();
-	for (int j=2; j<lenseq; ++j){
-		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
-	}
-	int m,s=0;
-	for (int i=0; i<64; ++i)
-	{
-		m = DUSTSCORE[i];
-		s  += (m*(m-1))/2;
-	}
-	return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
-}
-
-
-const bool correctSequence(Sequence& s){
-	const char* data = s.getDataBuffer();
-	for (size_t i=0; i<s.getDataSize(); i++){
-		if (data[i]!='A' && data[i]!='C' && data[i]!='G' && data[i]!='T'){
-			return false;
-		}
-	}
-	return true;
-}
-
-
 bool correct(Sequence& seq){
 	const char* data = seq.getDataBuffer();
 	int DUSTSCORE[64]; // all tri-nucleotides
-	for (int i=0; i<64; i++){
+	for (int i=0; i<64; ++i){
 		DUSTSCORE[i]=0;//TODO opti
 	}
 	size_t lenseq =seq.getDataSize();
@@ -136,60 +82,34 @@ bool correct(Sequence& seq){
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
-	ISynchronizer* synchro;
 	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
 
-	FunctorIndexer(ISynchronizer* synchro, quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  : synchro(synchro), quasiDico(quasiDico), kmer_size(kmer_size) {
+	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
 	}
 
 	void operator() (Sequence& seq){
-		// if (not correctSequence(seq) or not highComplexity(seq)){return;}
 		if(not correct(seq)){return;}
-		// We create an iterator over this bank.
-		// We set the data from which we want to extract kmers.
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
-		// We iterate the kmers.
 		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
-		// synchro->lock();
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
-			// Adding the read id to the list of ids associated to this kmer.
-			// note that the kmer may not exist in the dictionnary if it was under the solidity threshold.
-			// in this case, nothing is done
-			// synchro->lock();
+			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionnary if it was under the solidity threshold.in this case, nothing is done
 			quasiDico.set_value((itKmer)->value().getVal(), read_id);
-			// synchro->unlock();
 		}
-		// synchro->unlock();
 	}
 };
 
 
-/*********************************************************************
- ** METHOD  :
- ** PURPOSE :
- ** INPUT   :
- ** OUTPUT  :
- ** RETURN  :
- ** REMARKS :
- *********************************************************************/
 void kmer_quasi_indexer::fill_quasi_dictionary (const int nbCores){
 	bool exists;
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));
 	cout<<"Index "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
-
-	// We need a general synchronization mechanism that will be shared by the threads.
-	ISynchronizer* synchro = System::thread().newSynchronizer();
-
-	// We create a dispatcher configured for 'nbCores' cores.
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorIndexer(synchro,quasiDico, kmer_size));
-
-	delete synchro;
+	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size));
 }
 
 
@@ -197,24 +117,18 @@ void kmer_quasi_indexer::fill_quasi_dictionary (const int nbCores){
 struct FunctorQuery
 {
 	ISynchronizer* synchro;
-	ofstream* outFile;
+	FILE* outFile;
 	const int kmer_size;
 	const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	const int threshold;
 
-	FunctorQuery (ISynchronizer* synchro, ofstream* outFile,  const int kmer_size, const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico, const int threshold)  : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
-
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size, const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico, const int threshold)  : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 	}
 
 	~FunctorQuery () {
 	}
 
-	void operator() (Sequence& seq)
-	{
-
-		// if (not correctSequence(seq) or  not highComplexity(seq)){
-		// 	return;
-		// }
+	void operator() (Sequence& seq){
 		if(not correct(seq)){return;}
 
 		bool exists;
@@ -222,11 +136,9 @@ struct FunctorQuery
 
 		std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
 
-		// We set the data from which we want to extract kmers.
 		Kmer<KMER_SPAN(1)>::ModelCanonical model(kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer(model);
 		itKmer.setData (seq.getData());
-		// We iterate the kmers.
 
 		u_int i=0; // position on the read
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
@@ -247,23 +159,26 @@ struct FunctorQuery
 					}
 				}
 			}
-			//			similar_read_ids.insert(similar_read_ids.end(),associated_read_ids.begin(),associated_read_ids.end());
+			//similar_read_ids.insert(similar_read_ids.end(),associated_read_ids.begin(),associated_read_ids.end());
 			++i;
 
 		}
+		string toPrint;
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
 		for (auto &matched_read:similar_read_ids_position_count){
 			if (std::get<1>(matched_read.second) > threshold) {
 				if (not read_id_printed){
 					read_id_printed=true;
 					synchro->lock();
-					*outFile<<seq.getIndex()<<" ";
+					toPrint=to_string(seq.getIndex())+" ";
+					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				*outFile<<"["<<matched_read.first<<" "<<std::get<1>(matched_read.second)<<"] ";
+				toPrint="["+to_string(matched_read.first)+" "+to_string(std::get<1>(matched_read.second))+"]";
+				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
 		}
 		if(read_id_printed){
-			*outFile<<endl;
+			fwrite("\n", sizeof(char), 1, outFile);
 			synchro->unlock ();
 		}
 	}
@@ -273,41 +188,24 @@ struct FunctorQuery
 void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores){
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
-
-	ofstream  outFile;
-	//TODO ofstream to low level printf
-	outFile.open (getInput()->getStr(STR_OUT_FILE));
-
-	outFile << "#query_read_id [target_read_id number_shared_"<<kmer_size<<"mers]* or U (unvalid read, containing not only ACGT characters or low complexity read)"<<endl;
+	FILE * pFile;
+	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
+	string message("#query_read_id [target_read_id number_shared_"+to_string(kmer_size)+"mers]* or U (unvalid read, containing not only ACGT characters or low complexity read)");
+	fwrite((message).c_str(), sizeof(char), message.size(), pFile);
 
 	LOCAL (bank);
-
-	// We create an iterator over this bank.
 	ProgressIterator<Sequence> itSeq (*bank);
-
-	// We need a general synchronization mechanism that will be shared by the threads.
 	ISynchronizer* synchro = System::thread().newSynchronizer();
-
-	// We create a dispatcher configured for 'nbCores' cores.
 	Dispatcher dispatcher (nbCores, 10000);
-	// We iterate the range.  NOTE: we could also use lambda expression (easing the code readability)
-	dispatcher.iterate (itSeq, FunctorQuery(synchro,&outFile, kmer_size, quasiDico, threshold));
-
-	outFile.close();    // We get rid of the synchronizer
+	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size, quasiDico, threshold));
+	fclose (pFile);
 	delete synchro;
 }
 
 
 void kmer_quasi_indexer::execute (){
-	// We can do here anything we want.
-	// For further information about the Tool class, please have a look
-	// on the ToyTool snippet  (http://gatb-core.gforge.inria.fr/snippets_tools.html)
-
-	// We gather some statistics.
-
 	int nbCores = 0; //TODO: parameter
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
-
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
 	// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
@@ -331,5 +229,4 @@ void kmer_quasi_indexer::execute (){
 	getInfo()->add (2, "Threshold size:",  "%d",  threshold);
 	getInfo()->add (1, "output");
 	getInfo()->add (2, "Results written in:",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
-
 }
