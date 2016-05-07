@@ -114,35 +114,55 @@ void kmer_quasi_indexer::fill_quasi_dictionary (const int nbCores){
 
 
 // We define a functor that will be cloned by the dispatcher
-struct FunctorQuery
+class FunctorQuery
 {
+public:
 	ISynchronizer* synchro;
 	FILE* outFile;
-	const int kmer_size;
-	const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
-	const int threshold;
+	int kmer_size;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
+	int threshold;
+	vector<u_int32_t> associated_read_ids;
+	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
+	Kmer<KMER_SPAN(1)>::ModelCanonical model;
+	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size, const quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico, const int threshold)  : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
+	FunctorQuery(const FunctorQuery& lol)
+	{
+		synchro=lol.synchro;
+		outFile=lol.outFile;
+		kmer_size=lol.kmer_size;
+		quasiDico=lol.quasiDico;
+		threshold=lol.threshold;
+		associated_read_ids=lol.associated_read_ids;
+		similar_read_ids_position_count=lol.similar_read_ids_position_count;
+		model=lol.model;
+		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
+
+
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
+		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
+		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+	}
+
 
 	~FunctorQuery () {
 	}
+
 
 	void operator() (Sequence& seq){
 		if(not correct(seq)){return;}
 
 		bool exists;
-		vector<u_int32_t> associated_read_ids;
-
-		std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
-
-		Kmer<KMER_SPAN(1)>::ModelCanonical model(kmer_size);
-		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer(model);
-		itKmer.setData (seq.getData());
+		associated_read_ids={};
+ 		similar_read_ids_position_count={};
+		itKmer->setData (seq.getData());
 
 		u_int i=0; // position on the read
-		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
-			quasiDico.get_value((itKmer)->value().getVal(),exists,associated_read_ids);
+		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
+			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 			if(!exists) {++i;continue;}
 			for(auto &read_id: associated_read_ids){
 				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
@@ -170,10 +190,10 @@ struct FunctorQuery
 				if (not read_id_printed){
 					read_id_printed=true;
 					synchro->lock();
-					toPrint=to_string(seq.getIndex())+" ";
+					toPrint=to_string(seq.getIndex())+":";
 					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				toPrint="["+to_string(matched_read.first)+" "+to_string(std::get<1>(matched_read.second))+"]";
+				toPrint=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
 				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
 		}
@@ -187,17 +207,17 @@ struct FunctorQuery
 
 void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores){
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
-	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
+	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
-	string message("#query_read_id [target_read_id number_shared_"+to_string(kmer_size)+"mers]* or U (unvalid read, containing not only ACGT characters or low complexity read)");
+	string message("#query_read_id [target_read_id number_shared_"+to_string(kmer_size)+"mers]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n");
 	fwrite((message).c_str(), sizeof(char), message.size(), pFile);
 
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
 	ISynchronizer* synchro = System::thread().newSynchronizer();
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size, quasiDico, threshold));
+	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold));
 	fclose (pFile);
 	delete synchro;
 }
