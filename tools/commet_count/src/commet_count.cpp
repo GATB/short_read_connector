@@ -32,14 +32,14 @@ commet_count::commet_count ()  : Tool ("commet_count"){
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
 	int kmer_size;
 
-	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
+	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
 	}
 
 	void operator() (Kmer<>::Count & itKmer){
-		quasiDico.set_value(itKmer.value.getVal(), (u_int32_t)itKmer.abundance);
+		quasiDico.set_value(itKmer.value.getVal(), itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance);
 	}
 };
 
@@ -61,7 +61,7 @@ void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const
 		exit(0);
 	}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
+	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
 	// gamma = 10
 
 
@@ -113,7 +113,7 @@ public:
 	ISynchronizer* synchro;
 	FILE* outFile;
 	int kmer_size;
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
 	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
@@ -134,7 +134,7 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold)
 	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
@@ -181,7 +181,7 @@ public:
 		if(not correct(seq)){return;}
 
 		bool exists;
-		u_int32_t count;
+		unsigned char count;
 
 		similar_read_ids_position_count={};
 		itKmer->setData (seq.getData());
@@ -204,7 +204,7 @@ public:
 		}
 
 		else{
-			string toPrint (to_string(seq.getIndex())+"none\n");
+			string toPrint (to_string(seq.getIndex())+" none\n");
 			synchro->lock();
 			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			synchro->unlock ();
