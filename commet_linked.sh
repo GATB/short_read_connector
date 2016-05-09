@@ -44,7 +44,7 @@ kmer_size=31
 abundance_min=2
 fingerprint_size=8
 kmer_threshold=3
-core_used=0
+core_used=1
 prefix="commet_linked_res"
 remove=1
 
