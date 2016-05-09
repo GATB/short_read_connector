@@ -45,7 +45,7 @@ void commet_linked_ram::create_quasi_dictionary (int fingerprint_size){
 		exit(0);
 	}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
+	quasiDico = quasiDictionnaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
 	// gamma = 10
 }
 
@@ -82,10 +82,10 @@ bool correct(Sequence& seq){
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
+	quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
 
-	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
+	FunctorIndexer(quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
 	}
 
 	void operator() (Sequence& seq){
@@ -120,7 +120,7 @@ public:
 	ISynchronizer* synchro;
 	FILE* outFile;
 	int kmer_size;
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
+	quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
 	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
@@ -141,7 +141,7 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
 	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
