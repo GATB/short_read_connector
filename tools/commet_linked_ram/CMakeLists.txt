@@ -1,4 +1,4 @@
-project(kmer_quasi_indexer)
+project(commet_linked_ram)
 
 ################################################################################
 # TOOL

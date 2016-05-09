@@ -44,7 +44,7 @@ kmer_size=31
 abundance_min=2
 fingerprint_size=8
 kmer_threshold=3
-core_used=1
+core_used=0
 prefix="commet_linked_res"
 remove=1
 
@@ -153,7 +153,7 @@ fi
 #unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
 
-time $EDIR/build/tools/kmer_quasi_indexer/kmer_quasi_indexer -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
+time $EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
 # sort results
 #sort -n ${unsorted_result_file} > ${result_file}
 

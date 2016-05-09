@@ -16,12 +16,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *****************************************************************************/
 
-#ifndef _TOOL_kmer_quasi_indexer_HPP_
-#define _TOOL_kmer_quasi_indexer_HPP_
+#ifndef _TOOL_commet_linked_ram_HPP_
+#define _TOOL_commet_linked_ram_HPP_
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
-#include "IteratorKmerH5.hpp"
+#include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionnary/src/quasidictionnary.h"
 /********************************************************************************/
 
@@ -36,7 +36,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class kmer_quasi_indexer : public Tool
+class commet_linked_ram : public Tool
 {
 	
 private:
@@ -48,7 +48,7 @@ private:
 public:
 
     // Constructor
-	kmer_quasi_indexer ();
+	commet_linked_ram ();
 
     // Actual job done by the tool is here
     void execute ();
@@ -62,4 +62,4 @@ public:
 
 /********************************************************************************/
 
-#endif /* _TOOL_kmer_quasi_indexer_HPP_ */
+#endif /* _TOOL_commet_linked_ram_HPP_ */

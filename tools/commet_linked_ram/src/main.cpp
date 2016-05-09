@@ -17,7 +17,7 @@
 *****************************************************************************/
 
 // We include the header file for the tool
-#include <kmer_quasi_indexer.hpp>
+#include <commet_linked_ram.hpp>
 
 /********************************************************************************/
 
@@ -26,7 +26,7 @@ int main (int argc, char* argv[])
     try
     {
         // We run the tool with the provided command line arguments.
-    	kmer_quasi_indexer().run (argc, argv);
+    	commet_linked_ram().run (argc, argv);
     }
     catch (Exception& e)
     {

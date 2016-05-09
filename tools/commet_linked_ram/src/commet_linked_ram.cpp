@@ -1,4 +1,4 @@
-#include <kmer_quasi_indexer.hpp>
+#include <commet_linked_ram.hpp>
 
 
 using namespace std;
@@ -16,7 +16,7 @@ static const char* STR_OUT_FILE = "-out";
 static const char* STR_CORE = "-core";
 
 
-kmer_quasi_indexer::kmer_quasi_indexer ()  : Tool ("kmer_quasi_indexer"){
+commet_linked_ram::commet_linked_ram ()  : Tool ("commet_linked_ram"){
 	// We add some custom arguments for command line interface
 	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
 	//getParser()->push_back (new OptionOneParam (STR_VERBOSE,   "verbosity (0:no display, 1: display kmers, 2: display distrib",  false, "0"));
@@ -29,7 +29,7 @@ kmer_quasi_indexer::kmer_quasi_indexer ()  : Tool ("kmer_quasi_indexer"){
 }
 
 
-void kmer_quasi_indexer::create_quasi_dictionary (int fingerprint_size){
+void commet_linked_ram::create_quasi_dictionary (int fingerprint_size){
 	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
@@ -102,7 +102,7 @@ struct FunctorIndexer
 };
 
 
-void kmer_quasi_indexer::fill_quasi_dictionary (const int nbCores){
+void commet_linked_ram::fill_quasi_dictionary (const int nbCores){
 	bool exists;
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));
 	cout<<"Index "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
@@ -205,7 +205,7 @@ public:
 };
 
 
-void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores){
+void commet_linked_ram::parse_query_sequences (int threshold, const int nbCores){
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * pFile;
@@ -223,7 +223,7 @@ void kmer_quasi_indexer::parse_query_sequences (int threshold, const int nbCores
 }
 
 
-void kmer_quasi_indexer::execute (){
+void commet_linked_ram::execute (){
 	int nbCores = getInput()->getInt(STR_CORE);
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 	// IMPORTANT NOTE:
