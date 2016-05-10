@@ -20,9 +20,13 @@ public:
 
 	IteratorKmerH5(Iterator<Kmer<>::Count>* iterator)  : iterator(iterator), pos(0)  { iterator->first();}
 
-	u_int64_t  const& operator*(){
+	u_int64_t  operator*(){
 //		cout<<iterator<<endl;
-		return *new u_int64_t(iterator->item().value.getVal());
+//		u_int64_t res = *new u_int64_t(iterator->item().value.getVal());
+//		return *new u_int64_t(iterator->item().value.getVal());
+//		cout<<"return "<<(u_int64_t)iterator->item().value.getVal()<<" "<<res<<endl;
+//		return res;
+		return iterator->item().value.getVal();
 //		Kmer<>::Count& count = iterator->item();
 //		return count.value;
 //		cout<<"count = "<<count.value<<" value = "<<oahash(count.value)<<endl;
