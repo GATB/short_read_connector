@@ -30,6 +30,7 @@ echo -e "\tOPTIONS:"
 echo -e "\t\t -p prefix. All out files will start with this prefix. Default=\"commet_linked_res\""
 echo -e "\t\t -g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
 echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
+echo -e "\t\t -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=8"
 echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
 echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as similar. Default=3"
 echo -e "\t\t -c: number of core used. Default=1"
@@ -51,12 +52,17 @@ remove=1
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts ":hgb:q:p:k:a:t:c:" opt; do
+while getopts ":hgb:q:p:k:a:t:c:f:" opt; do
 case $opt in
 
 h)
 help
 exit
+;;
+
+f)
+echo "use fingerprint size: $OPTARG" >&2
+fingerprint_size=$OPTARG
 ;;
 
 b)
