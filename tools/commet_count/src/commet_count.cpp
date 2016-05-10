@@ -35,8 +35,7 @@ struct FunctorIndexer
 	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
 	int kmer_size;
 
-	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
-	}
+	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
 
 	void operator() (Kmer<>::Count & itKmer){
 		quasiDico.set_value(itKmer.value.getVal(), itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance);
@@ -56,19 +55,13 @@ void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const
 	// We get the solid kmers collection 1) from the 'dsk' group  2) from the 'solid' collection
 	Partition<Kmer<>::Count>& solidKmers = dskGroup.getPartition<Kmer<>::Count> ("solid");
 	nbSolidKmers = solidKmers.getNbItems();
-	if(nbSolidKmers==0){
-		cout<<"No solid kmers in bank -- exit"<<endl;
-		exit(0);
-	}
+	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
-	// gamma = 10
-
-
+	int gamma(10);//TODO parameter
+	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
 	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers", nbSolidKmers);
 	Dispatcher dispatcher (nbCores, 10000);
 	dispatcher.iterate (itKmers, FunctorIndexer(quasiDico, kmer_size));
-
 }
 
 
@@ -209,7 +202,6 @@ public:
 			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			synchro->unlock ();
 		}
-
 
 	}
 };
