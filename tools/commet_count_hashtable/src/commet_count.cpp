@@ -69,7 +69,7 @@ void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const
 	Dispatcher dispatcher (nbCores, 10000);
 	dispatcher.iterate (itKmers, FunctorIndexer(hashDico, kmer_size));
 
-    cout<<"Filled hash table memory usage (MB) = "<<System::info().getMemoryMaxUsed()/1024<<endl;
+    cout<<"Filled hash table memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
 
 }
 
