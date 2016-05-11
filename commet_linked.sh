@@ -32,9 +32,10 @@ echo -e "\t\t -g: with this option, if a file of solid kmer exists with same pre
 echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
 echo -e "\t\t -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=8"
 echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
-echo -e "\t\t -t: minimal number of kmer shared by two reads to be considered as similar. Default=3"
-echo -e "\t\t -c: number of core used. Default=1"
-#echo "Any further question: read the readme file or contact us via the Biostar forum: https://www.biostars.org/t/discosnp/"
+echo -e "\t\t -s: minimal number of kmer shared by two reads to be considered as similar. Default=3"
+echo -e "\t\t -t: number of thread used. Default=1"
+echo -e "\t\t -d: use disk over RAM (slower)"
+echo -e "\t\t -c: use commet_count"
 }
 
 
@@ -48,16 +49,28 @@ kmer_threshold=3
 core_used=0
 prefix="commet_linked_res"
 remove=1
+diskMode=0
+countMode=0
 
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts ":hgb:q:p:k:a:t:c:f:" opt; do
+while getopts ":hgb:q:p:k:a:s:t:f:dc" opt; do
 case $opt in
 
 h)
 help
 exit
+;;
+
+d)
+echo "use disk mode:"
+diskMode=1
+;;
+
+d)
+echo "use commet count:"
+countMode=1
 ;;
 
 f)
@@ -99,13 +112,13 @@ echo "use abundance_min=$OPTARG" >&2
 abundance_min=$OPTARG
 ;;
 
-t)
+s)
 echo "use kmer_threshold=$OPTARG" >&2
 kmer_threshold=$OPTARG
 ;;
 
-c)
-echo "use $OPTARG cores">&2
+t)
+echo "use $OPTARG threads">&2
 core_used=$OPTARG
 ;;
 
@@ -160,10 +173,20 @@ fi
 # Compare read sets
 
 # COMMET_LINKED_RAM
-#time $EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
+if [ $diskMode -eq 0 ]; then
+	if [ $countMode -eq 0 ]; then
+		time $EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
+	fi
+fi
+# COMMET_LINKED_DISK
+if [ $diskMode -eq 1 ]; then
+	time $EDIR/build/tools/commet_linked_disk/commet_linked_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
+fi
 
 # COMMET_COUNT
-time $EDIR/build/tools/commet_count/commet_count -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
+if [ $countMode -eq 1 ]; then
+	time $EDIR/build/tools/commet_count/commet_count -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
+fi
 
 # sort results
 #sort -n ${unsorted_result_file} > ${result_file}
