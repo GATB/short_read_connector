@@ -64,12 +64,12 @@ exit
 ;;
 
 d)
-echo "use disk mode:"
+echo "use disk mode"
 diskMode=1
 ;;
 
-d)
-echo "use commet count:"
+c)
+echo "use commet count"
 countMode=1
 ;;
 
@@ -166,27 +166,34 @@ fi
 
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-       ${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all
+       cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
+       echo ${cmd}
+       ${cmd}
 fi
 
 #unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
 
+
 # COMMET_LINKED_RAM
 if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
-		time $EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
-	fi
+              cmd="$EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+       else
+
+       # COMMET_COUNT
+       #if [ $countMode -eq 1 ]; then
+       	cmd="$EDIR/build/tools/commet_count/commet_count -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+       fi
 fi
 # COMMET_LINKED_DISK
 if [ $diskMode -eq 1 ]; then
-	time $EDIR/build/tools/commet_linked_disk/commet_linked_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
+	cmd="$EDIR/build/tools/commet_linked_disk/commet_linked_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
 fi
 
-# COMMET_COUNT
-if [ $countMode -eq 1 ]; then
-	time $EDIR/build/tools/commet_count/commet_count -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
-fi
+
+echo ${cmd}
+time ${cmd}
 
 # sort results
 #sort -n ${unsorted_result_file} > ${result_file}

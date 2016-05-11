@@ -22,6 +22,7 @@
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
 #include <gatb/system/impl/SystemInfoCommon.hpp>// for having the memory
+
 #include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionnary/src/quasidictionnary.h"
 /********************************************************************************/
@@ -42,7 +43,8 @@ class commet_count : public Tool
 {
 	
 private:
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > quasiDico;
+//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > quasiDico;
+	std::unordered_map<u_int64_t, unsigned char> hashDico;
 	u_int64_t nbSolidKmers;
 	int kmer_size;
 	static const size_t span = KMER_SPAN(1);
