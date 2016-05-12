@@ -56,6 +56,7 @@ static int NT2int(char nt){
 
 
 bool correct(Sequence& seq){
+	return true;//TODO RM
 	const char* data = seq.getDataBuffer();
 	int DUSTSCORE[64]={0}; // all tri-nucleotides
 
@@ -89,7 +90,7 @@ struct FunctorIndexer
 	}
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
+		// if(not correct(seq)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
@@ -153,8 +154,7 @@ public:
 
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
-
+		// if(not correct(seq)){return;}
 		bool exists;
 		associated_read_ids={};
  		similar_read_ids_position_count={};
@@ -164,13 +164,14 @@ public:
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 			if(!exists) {++i;continue;}
+			// cout<<"index"<<seq.getIndex()<<endl;
+			// cout<<associated_read_ids.size()<<endl;
+			// cin.get();
 			for(auto &read_id: associated_read_ids){
 				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
-				// if(similar_read_ids_position_count.count(read_id)==0){
 					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
-				}
-				else{  // a kmer is already shared with this read
+				}else{  // a kmer is already shared with this read
 					std::pair <int,int> viablepos_nbshared = (element->second);
 					if(i>=viablepos_nbshared.first){ // the current position does not overlap the previous shared kmer
 						viablepos_nbshared.first = i+kmer_size; // next non overlapping position
@@ -179,9 +180,7 @@ public:
 					}
 				}
 			}
-			//similar_read_ids.insert(similar_read_ids.end(),associated_read_ids.begin(),associated_read_ids.end());
 			++i;
-
 		}
 		string toPrint;
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
@@ -190,10 +189,10 @@ public:
 				if (not read_id_printed){
 					read_id_printed=true;
 					synchro->lock();
-					toPrint=to_string(seq.getIndex())+":";
+					toPrint=to_string(seq.getIndex()+1)+":";
 					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				toPrint=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
+				toPrint=to_string(matched_read.first+1)+"-"+to_string(std::get<1>(matched_read.second))+" ";
 				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
 		}

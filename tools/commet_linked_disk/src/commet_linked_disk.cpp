@@ -31,6 +31,7 @@ static int NT2int(char nt){return (nt>>1)&3;}
 
 
 bool correct(Sequence& seq){
+	return true;//TODO RM
 	const char* data = seq.getDataBuffer();
 	int DUSTSCORE[64]={0}; // all tri-nucleotides
 
@@ -70,15 +71,7 @@ struct FunctorCount{
 			bool exists;
 			quasiDico.get_value((itKmer)->value().getVal(),exists,count);
 			if(exists){
-				// cout<<"go"<<endl;
-				// cout<<count<<endl;
-				// cout<<(itKmer)->value().getVal()<<endl;
-				// cin.get();
 				bool lol(quasiDico.set_value((itKmer)->value().getVal(), count+1));
-				// if(not lol){
-				// 	cout<<"wow"<<endl;
-				// 	cin.get();
-				// }
 			}
 		}
 	}
@@ -100,15 +93,12 @@ struct FunctorWriter{
 		bool exists;
 		uint32_t abundance;
 		quasiDico.get_value(it.value.getVal(),exists,abundance);
-		if(abundance < 2){
-			cout<<"lol"<<endl;
-			cout<<it.abundance<<" "<<abundance<<endl;
-			cout<<it.value.getVal()<<endl;
-			cin.get();
-		}
+		// if(not exists)
+		// 	cout<<"wow"<<endl;
+		// cout<<abundance<<endl;
 		quasiDico.set_value(it.value.getVal(), position);
 		string toPrint(4*(abundance+1),0);
-		// cout<<toPrint<<endl;
+
 		fwrite(toPrint.c_str(), 1, 4*(abundance+1), pFile);
 		position+=4*(abundance+1);
 	}
@@ -122,23 +112,16 @@ void commet_linked_disk::create_quasi_dictionary (int fingerprint_size){
 	kmer_size = atoi(dskGroup.getProperty("kmer_size").c_str());
 	Partition<Kmer<>::Count>& solidKmers = dskGroup.getPartition<Kmer<>::Count> ("solid");
 	nbSolidKmers = solidKmers.getNbItems();
-	if(nbSolidKmers==0){
-		cout<<"No solid kmers in bank -- exit"<<endl;exit(0);
-	}
-	cout<<"compute the qd"<<endl;
+	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	//we compute the quasidico
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
 	int gamma(10);//TODO parameter gamma
 	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, uint32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
-	cout<<"counting kmer in the bank file"<<endl;
 	//we count the occurence of kmer in the bank file (including false positive)
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));
 	ProgressIterator<Sequence> itSeq (*bank);
 	Dispatcher dispatcher (1, 1000);
 	dispatcher.iterate (itSeq, FunctorCount(quasiDico, kmer_size));
-	cout<<"writing blank file"<<endl;
-	cout<<nbSolidKmers<<endl;
-
 	//we create the blank file
 	pFile = fopen ("Erase_Me", "w+");
 	uint position(0);
@@ -183,25 +166,30 @@ struct FunctorIndexer{
 
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
+		// if(not correct(seq)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);//TODO we can do better than create this each time
 		itKmer.setData (seq.getData());
 		uint32_t read_id(static_cast<u_int32_t>(seq.getIndex())+1),position;
 		uint32_t id(0);
-		char  buffer[4];
 		bool exists;
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
-			// cout<<"go"<<endl;
+			// cout<<"GOOOOOOOOOOO"<<endl;
 			// find the position in the file on write the ReadID there
 			// find the initial pos with the quasi-dico and find the first unused (non 0)
 			quasiDico.get_value(itKmer->value().getVal(),exists,position);
 			if(not exists) {continue;}
 			fseek (pFile , position , SEEK_SET);
-			// cout<<endl<<"position"<<position<<endl;
 			while(true){
-				// cout<<"old "<<id<<endl;
+				// cout<<"old ;"<<id<<endl;
+				// fpos_t pos;
+				// fgetpos (pFile,&pos);
+				// cout<<pos<<endl;
 				int lol=fread(&id,1,4,pFile);
+				// if(lol==0){
+				// 	cout<<"pb"<<endl;
+				// 	exit(0);
+				// }
 				// id=atoi(buffer);
 				// cout<<"byte read"<<lol<<endl;
 				// cout<<"new "<<id<<endl;
@@ -219,7 +207,6 @@ struct FunctorIndexer{
 					break;
 				}
 			}
-			// cin.get();
 		}
 	}
 };
@@ -246,6 +233,7 @@ public:
 	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
 	int threshold;
 	uint32_t position;
+	int count;
 	std::vector<uint32_t> associated_read_ids;
 	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
@@ -276,28 +264,21 @@ public:
 
 
 	void operator() (Sequence& seq){
-		// cout<<"go"<<endl;
-		// cout<<"go"<<endl;
-		if(not correct(seq)){return;}
-
+		// if(not correct(seq)){return;}
 		bool exists;
 		associated_read_ids={};
  		similar_read_ids_position_count={};
 		itKmer->setData (seq.getData());
-
 		uint32_t i(0);
 		uint32_t id(0); // position on the read
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
-			// cout<<1<<endl;
+			associated_read_ids={};
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,position);
-			if(!exists) {++i;continue;}
+			if(not exists) {++i;continue;}
 			fseek ( pFile , position , SEEK_SET );
-			// cout<<3<<endl;
 			while(true){
 				fread (&id,1,4,pFile);
-				// cout<<"?"<<endl;
 				if(id!=0){
-					// cout<<2<<endl;
 					associated_read_ids.push_back(id);
 					// cout<<id<<endl;
 					// cout<<feof(pFile)<<endl;
@@ -306,13 +287,15 @@ public:
 					// cout<<pos<<endl;
 					// cin.get();
 				}else{
-					// cout<<4<<endl;
 					break;
 				}
 			}
+			// 	cout<<"index"<<seq.getIndex()<<endl;
+			// cout<<associated_read_ids.size()<<endl;
+			// cin.get();
 			for(auto &read_id: associated_read_ids){
 				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
-				if(element == similar_read_ids_position_count.end()){// not inserted yet:
+				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
 					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
 				}else{  // a kmer is already shared with this read
 					std::pair <int,int> viablepos_nbshared = (element->second);
@@ -335,7 +318,7 @@ public:
 					toPrint=to_string(seq.getIndex()+1)+":";
 					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				toPrint=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
+				toPrint=to_string(matched_read.first+1)+"-"+to_string(std::get<1>(matched_read.second))+" ";
 				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
 		}
@@ -348,7 +331,6 @@ public:
 
 
 void commet_linked_disk::parse_query_sequences (int threshold, const int nbCores){
-
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * outFile;
@@ -368,14 +350,6 @@ void commet_linked_disk::parse_query_sequences (int threshold, const int nbCores
 void commet_linked_disk::execute (){
 	int nbCores = getInput()->getInt(STR_CORE);
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
-	// IMPORTANT NOTE:
-	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
-	// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
-	// values are gonna be stored for all kmers. This is why I currently us a vector<u_int32_t> for storing read ids associated to a kmer.
-
-	// We need a non null finger print because of non solid non indexed kmers
-	//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
-	//		fingerprint_size=0;
 	cout<<"fingerprint = "<<fingerprint_size<<endl;
 	create_quasi_dictionary(fingerprint_size);
 	cout<<"fill quasi dico"<<endl;

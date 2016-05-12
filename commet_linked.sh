@@ -84,13 +84,10 @@ echo "use bank read set: $OPTARG" >&2
 bank_set=$OPTARG
 ;;
 
-
 q)
 echo "use query read set: $OPTARG" >&2
 query_set=$OPTARG
 ;;
-
-
 
 p)
 echo "use prefix=$OPTARG" >&2
@@ -167,7 +164,8 @@ fi
 
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-       cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
+	echo "allo"
+       cmd="${dsk_bin} -file ${bank_set},${query_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
        echo ${cmd}
        ${cmd}
 fi
@@ -181,16 +179,14 @@ if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
     	cmd="$EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
     else
-
-       # COMMET_COUNT
-       #if [ $countMode -eq 1 ]; then
+		# COMMET_COUNT
        	cmd="$EDIR/build/tools/commet_count/commet_count -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
        fi
-fi
-# COMMET_LINKED_DISK
-if [ $diskMode -eq 1 ]; then
+else
+	# COMMET_LINKED_DISK
 	cmd="$EDIR/build/tools/commet_linked_disk/commet_linked_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
 fi
+
 
 
 echo ${cmd}
