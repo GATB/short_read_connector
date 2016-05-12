@@ -32,15 +32,18 @@ commet_count::commet_count ()  : Tool ("commet_count"){
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
+//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
+	std::unordered_map<u_int64_t, unsigned char> hashDico;
 	int kmer_size;
 
-	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
+	FunctorIndexer(std::unordered_map<u_int64_t, unsigned char> &hashDico , int kmer_size)  :  hashDico(hashDico), kmer_size(kmer_size) {
+	}
 
 	void operator() (Kmer<>::Count & itKmer){
-		quasiDico.set_value(itKmer.value.getVal(), itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance);
+		hashDico[itKmer.value.getVal()] = itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance;
 	}
 };
+
 
 
 void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const int nbCores){
@@ -54,19 +57,20 @@ void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const
 	// We get the solid kmers collection 1) from the 'dsk' group  2) from the 'solid' collection
 	Partition<Kmer<>::Count>& solidKmers = dskGroup.getPartition<Kmer<>::Count> ("solid");
 	nbSolidKmers = solidKmers.getNbItems();
-	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
+	if(nbSolidKmers==0){
+		cout<<"No solid kmers in bank -- exit"<<endl;
+		exit(0);
+	}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	int gamma(10);//TODO parameter
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
-    
-    cout<<"Empty quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
-    
-    
+//	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
+	// gamma = 10
+
 	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers", nbSolidKmers);
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itKmers, FunctorIndexer(quasiDico, kmer_size));
-    
-    cout<<"Filled quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
+	dispatcher.iterate (itKmers, FunctorIndexer(hashDico, kmer_size));
+
+    cout<<"Filled hash table memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
+
 }
 
 
@@ -111,7 +115,8 @@ public:
 	ISynchronizer* synchro;
 	FILE* outFile;
 	int kmer_size;
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
+//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
+	std::unordered_map<u_int64_t, unsigned char> *hashDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
 	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
@@ -123,7 +128,7 @@ public:
 		synchro=lol.synchro;
 		outFile=lol.outFile;
 		kmer_size=lol.kmer_size;
-		quasiDico=lol.quasiDico;
+		hashDico=lol.hashDico;
 		threshold=lol.threshold;
 		associated_read_ids=lol.associated_read_ids;
 		similar_read_ids_position_count=lol.similar_read_ids_position_count;
@@ -132,8 +137,8 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  std::unordered_map<u_int64_t, unsigned char> *hashDico, const int threshold)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), hashDico(hashDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -180,15 +185,16 @@ public:
 
 		bool exists;
 		unsigned char count;
-
 		similar_read_ids_position_count={};
 		itKmer->setData (seq.getData());
 		vector<int> values;
 
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
-			quasiDico->get_value((*itKmer)->value().getVal(),exists,count);
-			if(!exists) {continue;}
-			values.push_back(count);
+			std::unordered_map<u_int64_t, unsigned char>::iterator got = hashDico->find((*itKmer)->value().getVal());
+									if (got == hashDico->end()) {continue;}
+
+
+			values.push_back(got->second);
 		}
 
 		float mean;
@@ -208,6 +214,7 @@ public:
 			synchro->unlock ();
 		}
 
+
 	}
 };
 
@@ -224,7 +231,7 @@ void commet_count::parse_query_sequences (int threshold, const int nbCores){
 	ProgressIterator<Sequence> itSeq (*bank);
 	ISynchronizer* synchro = System::thread().newSynchronizer();
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold));
+	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&hashDico, threshold));
 	fclose (pFile);
 	delete synchro;
 }

@@ -1,0 +1,152 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXFileReference section */
+		A771DE001CE32ABB00227B4D /* cmake_install.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmake_install.cmake; sourceTree = "<group>"; };
+		A771DE011CE32ABB00227B4D /* CMakeCache.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeCache.txt; sourceTree = "<group>"; };
+		A771DE021CE32ABB00227B4D /* CMakeFiles */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CMakeFiles; sourceTree = "<group>"; };
+		A771DE031CE32ABB00227B4D /* CPackConfig.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = CPackConfig.cmake; sourceTree = "<group>"; };
+		A771DE041CE32ABB00227B4D /* CPackSourceConfig.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = CPackSourceConfig.cmake; sourceTree = "<group>"; };
+		A771DE051CE32ABB00227B4D /* ext */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ext; sourceTree = "<group>"; };
+		A771DE061CE32ABB00227B4D /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		A771DE071CE32ABB00227B4D /* thirdparty */ = {isa = PBXFileReference; lastKnownFileType = folder; path = thirdparty; sourceTree = "<group>"; };
+		A771DE081CE32ABB00227B4D /* tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tools; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		A771DDFA1CE32ABB00227B4D = {
+			isa = PBXGroup;
+			children = (
+				A771DE001CE32ABB00227B4D /* cmake_install.cmake */,
+				A771DE011CE32ABB00227B4D /* CMakeCache.txt */,
+				A771DE021CE32ABB00227B4D /* CMakeFiles */,
+				A771DE031CE32ABB00227B4D /* CPackConfig.cmake */,
+				A771DE041CE32ABB00227B4D /* CPackSourceConfig.cmake */,
+				A771DE051CE32ABB00227B4D /* ext */,
+				A771DE061CE32ABB00227B4D /* Makefile */,
+				A771DE071CE32ABB00227B4D /* thirdparty */,
+				A771DE081CE32ABB00227B4D /* tools */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		A771DDFF1CE32ABB00227B4D /* build */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = A771DE091CE32ABB00227B4D /* Build configuration list for PBXLegacyTarget "build" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = "/Users/ppeterlo/workspace/gatb-tools/gatb-tools/tools/commet_linked/build";
+			dependencies = (
+			);
+			name = build;
+			passBuildSettingsInEnvironment = 1;
+			productName = build;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		A771DDFB1CE32ABB00227B4D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+			};
+			buildConfigurationList = A771DDFE1CE32ABB00227B4D /* Build configuration list for PBXProject "build" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = A771DDFA1CE32ABB00227B4D;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A771DDFF1CE32ABB00227B4D /* build */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		A771DDFC1CE32ABB00227B4D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Debug;
+		};
+		A771DDFD1CE32ABB00227B4D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Release;
+		};
+		A771DE0A1CE32ABB00227B4D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = build;
+			};
+			name = Debug;
+		};
+		A771DE0B1CE32ABB00227B4D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = build;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A771DDFE1CE32ABB00227B4D /* Build configuration list for PBXProject "build" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A771DDFC1CE32ABB00227B4D /* Debug */,
+				A771DDFD1CE32ABB00227B4D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A771DE091CE32ABB00227B4D /* Build configuration list for PBXLegacyTarget "build" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A771DE0A1CE32ABB00227B4D /* Debug */,
+				A771DE0B1CE32ABB00227B4D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A771DDFB1CE32ABB00227B4D /* Project object */;
+}
