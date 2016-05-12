@@ -62,7 +62,7 @@ void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const
     cout<<"Empty quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
     
     
-	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers", nbSolidKmers);
+	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers counts", nbSolidKmers);
 	Dispatcher dispatcher (nbCores, 10000);
 	dispatcher.iterate (itKmers, FunctorIndexer(quasiDico, kmer_size));
     
@@ -114,7 +114,6 @@ public:
 	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
-	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
 
@@ -126,7 +125,6 @@ public:
 		quasiDico=lol.quasiDico;
 		threshold=lol.threshold;
 		associated_read_ids=lol.associated_read_ids;
-		similar_read_ids_position_count=lol.similar_read_ids_position_count;
 		model=lol.model;
 		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -180,14 +178,14 @@ public:
 
 		bool exists;
 		unsigned char count;
-
-		similar_read_ids_position_count={};
 		itKmer->setData (seq.getData());
 		vector<int> values;
 
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,count);
-			if(!exists) {continue;}
+			if(!exists) {
+                
+                continue;}
 			values.push_back(count);
 		}
 
