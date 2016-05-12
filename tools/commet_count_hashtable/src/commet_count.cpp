@@ -32,15 +32,24 @@ commet_count::commet_count ()  : Tool ("commet_count"){
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
+	ISynchronizer* synchro;
 //	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
-	std::unordered_map<u_int64_t, unsigned char> hashDico;
+	std::unordered_map<u_int64_t, unsigned char> &hashDico;
 	int kmer_size;
-
-	FunctorIndexer(std::unordered_map<u_int64_t, unsigned char> &hashDico , int kmer_size)  :  hashDico(hashDico), kmer_size(kmer_size) {
+    
+	FunctorIndexer(ISynchronizer* synchro, std::unordered_map<u_int64_t, unsigned char>& hashDico , int kmer_size)  :  synchro(synchro), hashDico(hashDico), kmer_size(kmer_size) {
 	}
 
 	void operator() (Kmer<>::Count & itKmer){
-		hashDico[itKmer.value.getVal()] = itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance;
+        synchro->lock();
+       
+		hashDico[itKmer.value.getVal()] = itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance;//        hashDico[itKmer.value.getVal()] = 42;
+//        cout<<"psdoc"<<endl;
+        
+        synchro->unlock();
+
+        //        cout<<"indexed = "<<(int)hashDico[itKmer.value.getVal()]<<"value = "<<itKmer.abundance<<endl;
+//        cout<<hashDico.size()<<" "<<i<<endl;
 	}
 };
 
@@ -57,18 +66,20 @@ void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const
 	// We get the solid kmers collection 1) from the 'dsk' group  2) from the 'solid' collection
 	Partition<Kmer<>::Count>& solidKmers = dskGroup.getPartition<Kmer<>::Count> ("solid");
 	nbSolidKmers = solidKmers.getNbItems();
+    hashDico.reserve(nbSolidKmers);
+    cout<<"Reserve "<<nbSolidKmers<<" in the hash table"<<endl;
 	if(nbSolidKmers==0){
 		cout<<"No solid kmers in bank -- exit"<<endl;
 		exit(0);
 	}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-//	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
-	// gamma = 10
-
 	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers", nbSolidKmers);
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itKmers, FunctorIndexer(hashDico, kmer_size));
-
+    
+	ISynchronizer* synchro = System::thread().newSynchronizer();
+	dispatcher.iterate (itKmers, FunctorIndexer(synchro, hashDico, kmer_size));
+    delete synchro;
+    cout<<hashDico.size()<<" kmers are indexed"<<endl;
     cout<<"Filled hash table memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
 
 }
@@ -119,7 +130,6 @@ public:
 	std::unordered_map<u_int64_t, unsigned char> *hashDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
-	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
 
@@ -131,7 +141,6 @@ public:
 		hashDico=lol.hashDico;
 		threshold=lol.threshold;
 		associated_read_ids=lol.associated_read_ids;
-		similar_read_ids_position_count=lol.similar_read_ids_position_count;
 		model=lol.model;
 		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -185,18 +194,18 @@ public:
 
 		bool exists;
 		unsigned char count;
-		similar_read_ids_position_count={};
 		itKmer->setData (seq.getData());
 		vector<int> values;
-
+        
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			std::unordered_map<u_int64_t, unsigned char>::iterator got = hashDico->find((*itKmer)->value().getVal());
-									if (got == hashDico->end()) {continue;}
-
-
+            if (got == hashDico->end()) {
+                continue;}
+//            cout<<"in"<<endl; //DEB
+            
 			values.push_back(got->second);
 		}
-
+        
 		float mean;
 		int median, min, max;
 		if(mean_median_min_max(values, mean, median, min, max)){
@@ -221,6 +230,7 @@ public:
 
 void commet_count::parse_query_sequences (int threshold, const int nbCores){
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
+    cout<<"Total nb indexed elements = "<<hashDico.size()<<endl;
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
