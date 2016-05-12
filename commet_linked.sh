@@ -55,7 +55,7 @@ countMode=0
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts ":hgb:q:p:k:a:s:t:f:dc" opt; do
+while getopts "hgb:q:p:k:a:s:t:f:dc" opt; do
 case $opt in
 
 h)
@@ -64,12 +64,10 @@ exit
 ;;
 
 d)
-echo "use disk mode:"
 diskMode=1
 ;;
 
-d)
-echo "use commet count:"
+c)
 countMode=1
 ;;
 
@@ -166,7 +164,7 @@ fi
 
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-       ${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all
+       ${dsk_bin} -file ${bank_set},${query_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all
 fi
 
 #unsorted_result_file=${result_file}"_unsorted"
@@ -175,16 +173,19 @@ fi
 # COMMET_LINKED_RAM
 if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
+		echo "using COMMET LINKED:"
 		time $EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
 	fi
 fi
 # COMMET_LINKED_DISK
 if [ $diskMode -eq 1 ]; then
+	echo "using COMMET LINKED DISK:"
 	time $EDIR/build/tools/commet_linked_disk/commet_linked_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
 fi
 
 # COMMET_COUNT
 if [ $countMode -eq 1 ]; then
+	echo "using COMMET COUNT:"
 	time $EDIR/build/tools/commet_count/commet_count -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}
 fi
 
