@@ -200,6 +200,7 @@ public:
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			std::unordered_map<u_int64_t, unsigned char>::iterator got = hashDico->find((*itKmer)->value().getVal());
             if (got == hashDico->end()) {
+                values.push_back(0);
                 continue;}
 //            cout<<"in"<<endl; //DEB
             

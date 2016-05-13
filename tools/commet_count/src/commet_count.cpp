@@ -184,8 +184,8 @@ public:
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,count);
 			if(!exists) {
-                
-                continue;}
+                count=0;
+            }
 			values.push_back(count);
 		}
 
