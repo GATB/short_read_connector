@@ -19,7 +19,6 @@ static const char* STR_CORE = "-core";
 commet_linked_ram::commet_linked_ram ()  : Tool ("commet_linked_ram"){
 	// We add some custom arguments for command line interface
 	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
-	//getParser()->push_back (new OptionOneParam (STR_VERBOSE,   "verbosity (0:no display, 1: display kmers, 2: display distrib",  false, "0"));
 	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
@@ -56,7 +55,6 @@ static int NT2int(char nt){
 
 
 bool correct(Sequence& seq){
-	return true;//TODO RM
 	const char* data = seq.getDataBuffer();
 	int DUSTSCORE[64]={0}; // all tri-nucleotides
 
@@ -80,9 +78,7 @@ bool correct(Sequence& seq){
 }
 
 
-// We define a functor that will be cloned by the dispatcher
-struct FunctorIndexer
-{
+struct FunctorIndexer{
 	quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
 
@@ -90,7 +86,7 @@ struct FunctorIndexer
 	}
 
 	void operator() (Sequence& seq){
-		// if(not correct(seq)){return;}
+		if(not correct(seq)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
@@ -114,7 +110,6 @@ void commet_linked_ram::fill_quasi_dictionary (const int nbCores){
 }
 
 
-// We define a functor that will be cloned by the dispatcher
 class FunctorQuery
 {
 public:
@@ -141,32 +136,25 @@ public:
 		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
 
-
 	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
 	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
 
-
 	~FunctorQuery () {
 	}
 
-
 	void operator() (Sequence& seq){
-		// if(not correct(seq)){return;}
+		if(not correct(seq)){return;}
 		bool exists;
 		associated_read_ids={};
  		similar_read_ids_position_count={};
 		itKmer->setData (seq.getData());
-
 		u_int i=0; // position on the read
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 			if(!exists) {++i;continue;}
-			// cout<<"index"<<seq.getIndex()<<endl;
-			// cout<<associated_read_ids.size()<<endl;
-			// cin.get();
 			for(auto &read_id: associated_read_ids){
 				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
@@ -211,7 +199,6 @@ void commet_linked_ram::parse_query_sequences (int threshold, const int nbCores)
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
 	string message("#query_read_id [target_read_id number_shared_"+to_string(kmer_size)+"mers]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n");
 	fwrite((message).c_str(), sizeof(char), message.size(), pFile);
-
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
 	ISynchronizer* synchro = System::thread().newSynchronizer();
