@@ -302,9 +302,7 @@ void commet_linked_disk::execute (){
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 	cout<<"fingerprint = "<<fingerprint_size<<endl;
 	create_quasi_dictionary(fingerprint_size,nbCores);
-	cout<<"fill quasi dico"<<endl;
 	fill_quasi_dictionary(nbCores);
-	cout<<"query start"<<endl;
 	int threshold = getInput()->getInt(STR_THRESHOLD);
 	parse_query_sequences(threshold-1, nbCores); //-1 avoids >=
 

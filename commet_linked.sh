@@ -164,7 +164,6 @@ fi
 
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-	echo "allo"
        cmd="${dsk_bin} -file ${bank_set},${query_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
        echo ${cmd}
        ${cmd}
