@@ -16,8 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *****************************************************************************/
 
-#ifndef _TOOL_commet_linked_ram_HPP_
-#define _TOOL_commet_linked_ram_HPP_
+#ifndef _TOOL_SRC_linker_disk_HPP_
+#define _TOOL_SRC_linker_disk_HPP_
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
@@ -36,24 +36,25 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class commet_linked_ram : public Tool
+class SRC_linker_disk : public Tool
 {
-	
+
 private:
-	quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
 	u_int64_t nbSolidKmers;
 	int kmer_size;
 	static const size_t span = KMER_SPAN(1);
 
 public:
 
+	FILE * pFile;
     // Constructor
-	commet_linked_ram ();
+	SRC_linker_disk ();
 
     // Actual job done by the tool is here
     void execute ();
 
-    void create_quasi_dictionary(int fingerprint_size);
+    void create_quasi_dictionary(int fingerprint_size,int nbCores);
 
     void fill_quasi_dictionary(const int nbCores);
 

@@ -1,4 +1,4 @@
-project(commet_count)
+project(SRC_counter_hashtable)
 
 ################################################################################
 # TOOL

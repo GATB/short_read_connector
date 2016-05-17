@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="1.0.0"
+version="1.1.1"
 
 
 EDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -17,9 +17,9 @@ fi
 
 
 function help {
-echo "commet_linked.sh. Compare reads from two read sets (distinct or not)"
+echo "short_read_connector.sh - Compare reads from two read sets (distinct or not)"
 echo "Version "$version
-echo "Usage: sh commet_linked.sh -b read_file_of_files -q read_file_of_files [OPTIONS]"
+echo "Usage: sh short_read_connector.sh -b read_file_of_files -q read_file_of_files [OPTIONS]"
 echo -e "\tMANDATORY:"
 echo -e "\t\t -b read_file_of_files for bank"
 echo -e "\t\t    Example: -b data/c1.fasta.gz"
@@ -27,7 +27,7 @@ echo -e "\t\t -q read_file_of_files for query"
 echo -e "\t\t    Example: -q data/c2.fasta.gz"
 
 echo -e "\tOPTIONS:"
-echo -e "\t\t -p prefix. All out files will start with this prefix. Default=\"commet_linked_res\""
+echo -e "\t\t -p prefix. All out files will start with this prefix. Default=\"short_read_connector_res\""
 echo -e "\t\t -g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
 echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
 echo -e "\t\t -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=8"
@@ -35,7 +35,7 @@ echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value a
 echo -e "\t\t -s: minimal number of kmer shared by two reads to be considered as similar. Default=3"
 echo -e "\t\t -t: number of thread used. Default=1"
 echo -e "\t\t -d: use disk over RAM (slower)"
-echo -e "\t\t -c: use commet_count"
+echo -e "\t\t -c: use short_read_connector_counter (SRC_counter)"
 }
 
 
@@ -47,7 +47,7 @@ abundance_min=2
 fingerprint_size=8
 kmer_threshold=3
 core_used=0
-prefix="commet_linked_res"
+prefix="short_read_connector_res"
 remove=1
 diskMode=0
 countMode=0
@@ -70,7 +70,7 @@ diskMode=1
 
 c)
 
-echo "use commet count"
+echo "use SRC_counter"
 countMode=1
 ;;
 
@@ -164,32 +164,44 @@ fi
 
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-       cmd="${dsk_bin} -file ${bank_set},${query_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
+       cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
        echo ${cmd}
        ${cmd}
+if [ $? -ne 0 ]
+then
+echo "there was a problem with the kmer counting."
+exit 1
+fi
 fi
 
 #unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
 
 
-# COMMET_LINKED_RAM
+# SRC_LINKER_RAM
 if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
-    	cmd="$EDIR/build/tools/commet_linked_ram/commet_linked_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+    	cmd="$EDIR/build/tools/SRC_linker_ram/SRC_linker_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
     else
-		# COMMET_COUNT
-       	cmd="$EDIR/build/tools/commet_count/commet_count -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+		# SRC_COUNTER
+       	cmd="$EDIR/build/tools/SRC_counter/SRC_counter -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
        fi
 else
-	# COMMET_LINKED_DISK
-	cmd="$EDIR/build/tools/commet_linked_disk/commet_linked_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+	# SRC_LINKER_DISK
+	cmd="$EDIR/build/tools/SRC_linker_disk/SRC_linker_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
 fi
 
 
 
 echo ${cmd}
-time ${cmd}
+${cmd}
+if [ $? -ne 0 ]
+then
+echo "there was a problem with short read connector."
+exit 1
+fi
+
+
 
 # sort results
 #sort -n ${unsorted_result_file} > ${result_file}
@@ -199,7 +211,7 @@ time ${cmd}
 
 
 echo "***********************************"
-echo "comment_linked finished"
+echo "Short read connector finished"
 echo "results in:"
 echo "   "${result_file}
 echo "Contact: pierre.peterlongo@inria.fr"

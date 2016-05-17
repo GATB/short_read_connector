@@ -1,4 +1,4 @@
-project(commet_linked_disk)
+project(SRC_counter)
 
 ################################################################################
 # TOOL
@@ -7,8 +7,8 @@ project(commet_linked_disk)
 # we get compilation definitions from the gatb-core part
 add_definitions (${gatb-core-flags})
 
-# we give the headers directories from :
-#       - from project source
+# we give the headers directories from : 
+#       - from project source 
 #       - from GATB-CORE source
 include_directories (src  ${gatb-core-includes})
 

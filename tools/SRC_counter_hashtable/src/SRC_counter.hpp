@@ -16,12 +16,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *****************************************************************************/
 
-#ifndef _TOOL_commet_count_HPP_
-#define _TOOL_commet_count_HPP_
+#ifndef _TOOL_SRC_counter_HPP_
+#define _TOOL_SRC_counter_HPP_
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
 #include <gatb/system/impl/SystemInfoCommon.hpp>// for having the memory
+
 #include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionnary/src/quasidictionnary.h"
 /********************************************************************************/
@@ -38,11 +39,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class commet_count : public Tool
+class SRC_counter : public Tool
 {
 	
 private:
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > quasiDico;
+//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > quasiDico;
+	std::unordered_map<u_int64_t, unsigned char> hashDico;
 	u_int64_t nbSolidKmers;
 	int kmer_size;
 	static const size_t span = KMER_SPAN(1);
@@ -50,7 +52,7 @@ private:
 public:
 
     // Constructor
-	commet_count ();
+	SRC_counter ();
 
     // Actual job done by the tool is here
     void execute ();
@@ -63,4 +65,4 @@ public:
 
 /********************************************************************************/
 
-#endif /* _TOOL_commet_count_HPP_ */
+#endif /* _TOOL_SRC_counter_HPP_ */

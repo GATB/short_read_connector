@@ -1,4 +1,4 @@
-#include <commet_count.hpp>
+#include <SRC_counter.hpp>
 
 
 using namespace std;
@@ -16,7 +16,7 @@ static const char* STR_OUT_FILE = "-out";
 static const char* STR_CORE = "-core";
 
 
-commet_count::commet_count ()  : Tool ("commet_count"){
+SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 	// We add some custom arguments for command line interface
 	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
 	//getParser()->push_back (new OptionOneParam (STR_VERBOSE,   "verbosity (0:no display, 1: display kmers, 2: display distrib",  false, "0"));
@@ -32,30 +32,18 @@ commet_count::commet_count ()  : Tool ("commet_count"){
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
-	ISynchronizer* synchro;
-//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
-	std::unordered_map<u_int64_t, unsigned char> &hashDico;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
 	int kmer_size;
-    
-	FunctorIndexer(ISynchronizer* synchro, std::unordered_map<u_int64_t, unsigned char>& hashDico , int kmer_size)  :  synchro(synchro), hashDico(hashDico), kmer_size(kmer_size) {
-	}
+
+	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
 
 	void operator() (Kmer<>::Count & itKmer){
-        synchro->lock();
-       
-		hashDico[itKmer.value.getVal()] = itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance;//        hashDico[itKmer.value.getVal()] = 42;
-//        cout<<"psdoc"<<endl;
-        
-        synchro->unlock();
-
-        //        cout<<"indexed = "<<(int)hashDico[itKmer.value.getVal()]<<"value = "<<itKmer.abundance<<endl;
-//        cout<<hashDico.size()<<" "<<i<<endl;
+		quasiDico.set_value(itKmer.value.getVal(), itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance);
 	}
 };
 
 
-
-void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const int nbCores){
+void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const int nbCores){
 	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
@@ -66,22 +54,19 @@ void commet_count::create_and_fill_quasi_dictionary (int fingerprint_size, const
 	// We get the solid kmers collection 1) from the 'dsk' group  2) from the 'solid' collection
 	Partition<Kmer<>::Count>& solidKmers = dskGroup.getPartition<Kmer<>::Count> ("solid");
 	nbSolidKmers = solidKmers.getNbItems();
-    hashDico.reserve(nbSolidKmers);
-    cout<<"Reserve "<<nbSolidKmers<<" in the hash table"<<endl;
-	if(nbSolidKmers==0){
-		cout<<"No solid kmers in bank -- exit"<<endl;
-		exit(0);
-	}
+	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers", nbSolidKmers);
-	Dispatcher dispatcher (nbCores, 10000);
+	int gamma(10);//TODO parameter
+	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
     
-	ISynchronizer* synchro = System::thread().newSynchronizer();
-	dispatcher.iterate (itKmers, FunctorIndexer(synchro, hashDico, kmer_size));
-    delete synchro;
-    cout<<hashDico.size()<<" kmers are indexed"<<endl;
-    cout<<"Filled hash table memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
-
+    cout<<"Empty quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
+    
+    
+	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers counts", nbSolidKmers);
+	Dispatcher dispatcher (nbCores, 10000);
+	dispatcher.iterate (itKmers, FunctorIndexer(quasiDico, kmer_size));
+    
+    cout<<"Filled quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
 }
 
 
@@ -126,8 +111,7 @@ public:
 	ISynchronizer* synchro;
 	FILE* outFile;
 	int kmer_size;
-//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
-	std::unordered_map<u_int64_t, unsigned char> *hashDico;
+	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
@@ -138,7 +122,7 @@ public:
 		synchro=lol.synchro;
 		outFile=lol.outFile;
 		kmer_size=lol.kmer_size;
-		hashDico=lol.hashDico;
+		quasiDico=lol.quasiDico;
 		threshold=lol.threshold;
 		associated_read_ids=lol.associated_read_ids;
 		model=lol.model;
@@ -146,8 +130,8 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  std::unordered_map<u_int64_t, unsigned char> *hashDico, const int threshold)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), hashDico(hashDico), threshold(threshold) {
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -196,17 +180,15 @@ public:
 		unsigned char count;
 		itKmer->setData (seq.getData());
 		vector<int> values;
-        
+
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
-			std::unordered_map<u_int64_t, unsigned char>::iterator got = hashDico->find((*itKmer)->value().getVal());
-            if (got == hashDico->end()) {
-                values.push_back(0);
-                continue;}
-//            cout<<"in"<<endl; //DEB
-            
-			values.push_back(got->second);
+			quasiDico->get_value((*itKmer)->value().getVal(),exists,count);
+			if(!exists) {
+                count=0;
+            }
+			values.push_back(count);
 		}
-        
+
 		float mean;
 		int median, min, max;
 		if(mean_median_min_max(values, mean, median, min, max)){
@@ -224,14 +206,12 @@ public:
 			synchro->unlock ();
 		}
 
-
 	}
 };
 
 
-void commet_count::parse_query_sequences (int threshold, const int nbCores){
+void SRC_counter::parse_query_sequences (int threshold, const int nbCores){
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
-    cout<<"Total nb indexed elements = "<<hashDico.size()<<endl;
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
@@ -242,13 +222,13 @@ void commet_count::parse_query_sequences (int threshold, const int nbCores){
 	ProgressIterator<Sequence> itSeq (*bank);
 	ISynchronizer* synchro = System::thread().newSynchronizer();
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&hashDico, threshold));
+	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold));
 	fclose (pFile);
 	delete synchro;
 }
 
 
-void commet_count::execute (){
+void SRC_counter::execute (){
 	int nbCores = getInput()->getInt(STR_CORE);
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
 	// IMPORTANT NOTE:

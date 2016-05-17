@@ -1,4 +1,4 @@
-project(commet_linked)
+project(short_read_connector)
 
 cmake_minimum_required(VERSION 2.6)
 

@@ -17,7 +17,7 @@
 *****************************************************************************/
 
 // We include the header file for the tool
-#include <commet_count.hpp>
+#include <SRC_linker_disk.hpp>
 
 /********************************************************************************/
 
@@ -26,7 +26,7 @@ int main (int argc, char* argv[])
     try
     {
         // We run the tool with the provided command line arguments.
-    	commet_count().run (argc, argv);
+    	SRC_linker_disk().run (argc, argv);
     }
     catch (Exception& e)
     {

@@ -1,7 +1,7 @@
 ################################################################################
 #  TOOLS GENERATION
 ################################################################################
-ADD_SUBDIRECTORY(commet_linked_ram)
-ADD_SUBDIRECTORY(commet_linked_disk)
-ADD_SUBDIRECTORY(commet_count)
-#ADD_SUBDIRECTORY(commet_count_hashtable)
+ADD_SUBDIRECTORY(SRC_linker_ram)
+ADD_SUBDIRECTORY(SRC_linker_disk)
+ADD_SUBDIRECTORY(SRC_counter)
+#ADD_SUBDIRECTORY(SRC_counter_hashtable)
