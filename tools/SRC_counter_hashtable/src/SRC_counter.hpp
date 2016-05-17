@@ -21,6 +21,7 @@
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
+
 #include <gatb/system/impl/SystemInfoCommon.hpp>// for having the memory
 
 #include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"

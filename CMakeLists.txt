@@ -1,4 +1,4 @@
-project(DiscoSNP++)
+project(short_read_connector)
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -52,6 +52,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
 #set(PROJECT_BINARY_DIR bin)
 ADD_SUBDIRECTORY(tools)
+ADD_SUBDIRECTORY(thirdparty)
 
 ################################################################################
 #  PACKAGING
