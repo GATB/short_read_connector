@@ -37,6 +37,7 @@ SET (CMAKE_MODULE_PATH ${GATB_CORE_HOME}/cmake)
 ################################################################################
 
 # We don't want to install some GATB-CORE artifacts
+SET (GATB_CORE_EXCLUDE_TOOLS     1)
 SET (GATB_CORE_EXCLUDE_TESTS     1)
 SET (GATB_CORE_EXCLUDE_EXAMPLES  1)
 
@@ -49,7 +50,7 @@ include (GatbCore)
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-set(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
+set(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/tools)
 #set(PROJECT_BINARY_DIR bin)
 ADD_SUBDIRECTORY(tools)
 ADD_SUBDIRECTORY(thirdparty)
@@ -85,7 +86,7 @@ SET (CPACK_SOURCE_IGNORE_FILES
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc                            DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test                           DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts                        DESTINATION .)
-INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/run_discoSnp++.sh              DESTINATION .)
+INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/short_read_connector.sh        DESTINATION .)
 INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/README.md                      DESTINATION .)
 INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE                        DESTINATION .)
 

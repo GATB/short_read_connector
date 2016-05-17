@@ -181,14 +181,14 @@ fi
 # SRC_LINKER_RAM
 if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
-    	cmd="$EDIR/build/tools/SRC_linker_ram/SRC_linker_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+    	cmd="$EDIR/build/bin/SRC_linker_ram/SRC_linker_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
     else
 		# SRC_COUNTER
-       	cmd="$EDIR/build/tools/SRC_counter/SRC_counter -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+       	cmd="$EDIR/build/bin/SRC_counter/SRC_counter -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
        fi
 else
 	# SRC_LINKER_DISK
-	cmd="$EDIR/build/tools/SRC_linker_disk/SRC_linker_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+	cmd="$EDIR/build/bin/SRC_linker_disk/SRC_linker_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
 fi
 
 
