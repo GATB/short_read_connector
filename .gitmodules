@@ -1,3 +1,6 @@
 [submodule "thirdparty/gatb-core"]
 	path = thirdparty/gatb-core
 	url = https://github.com/GATB/gatb-core.git
+[submodule "thirdparty/quasi_dictionary"]
+	path = thirdparty/quasi_dictionary
+	url = https://github.com/pierrepeterlongo/quasi_dictionary.git
