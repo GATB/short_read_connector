@@ -33,7 +33,7 @@ SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 struct FunctorIndexer
 {
 	ISynchronizer* synchro;
-//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
+//	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
 	std::unordered_map<u_int64_t, unsigned char> &hashDico;
 	int kmer_size;
     
@@ -126,7 +126,7 @@ public:
 	ISynchronizer* synchro;
 	FILE* outFile;
 	int kmer_size;
-//	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
+//	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
 	std::unordered_map<u_int64_t, unsigned char> *hashDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;

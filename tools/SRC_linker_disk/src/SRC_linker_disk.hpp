@@ -22,7 +22,7 @@
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
 #include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"
-#include "../../../thirdparty/quasi_dictionnary/src/quasidictionnary.h"
+#include "../../../thirdparty/quasi_dictionary/src/quasidictionary.h"
 /********************************************************************************/
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -40,7 +40,7 @@ class SRC_linker_disk : public Tool
 {
 
 private:
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
 	u_int64_t nbSolidKmers;
 	int kmer_size;
 	static const size_t span = KMER_SPAN(1);

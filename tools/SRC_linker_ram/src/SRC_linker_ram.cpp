@@ -44,7 +44,7 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size){
 		exit(0);
 	}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	quasiDico = quasiDictionnaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
+	quasiDico = quasidictionaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
 	// gamma = 10
 }
 
@@ -79,10 +79,10 @@ bool correct(Sequence& seq){
 
 
 struct FunctorIndexer{
-	quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
+	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
 
-	FunctorIndexer(quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
+	FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
 	}
 
 	void operator() (Sequence& seq){
@@ -92,7 +92,7 @@ struct FunctorIndexer{
 		itKmer.setData (seq.getData());
 		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
-			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionnary if it was under the solidity threshold.in this case, nothing is done
+			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
 			quasiDico.set_value((itKmer)->value().getVal(), read_id);
 		}
 	}
@@ -116,7 +116,7 @@ public:
 	ISynchronizer* synchro;
 	FILE* outFile;
 	int kmer_size;
-	quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
+	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
 	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
@@ -136,7 +136,7 @@ public:
 		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
 	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);

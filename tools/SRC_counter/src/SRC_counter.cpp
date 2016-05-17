@@ -32,10 +32,10 @@ SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 // We define a functor that will be cloned by the dispatcher
 struct FunctorIndexer
 {
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
 	int kmer_size;
 
-	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
+	FunctorIndexer(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
 
 	void operator() (Kmer<>::Count & itKmer){
 		quasiDico.set_value(itKmer.value.getVal(), itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance);
@@ -57,7 +57,7 @@ void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const 
 	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
 	int gamma(10);//TODO parameter
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
+	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
     
     cout<<"Empty quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
     
@@ -111,7 +111,7 @@ public:
 	ISynchronizer* synchro;
 	FILE* outFile;
 	int kmer_size;
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
 	int threshold;
 	vector<u_int32_t> associated_read_ids;
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
@@ -130,7 +130,7 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold)
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold)
 	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);

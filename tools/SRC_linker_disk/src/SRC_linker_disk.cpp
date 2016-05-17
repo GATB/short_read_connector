@@ -54,10 +54,10 @@ bool correct(Sequence& seq){
 
 
 struct FunctorCount{
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
 
-	FunctorCount(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
+	FunctorCount(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
 
 	void operator() (Sequence& seq){
 		if(not correct(seq)){return;}
@@ -77,13 +77,13 @@ struct FunctorCount{
 
 
 struct FunctorWriter{
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
 	uint32_t position;
 	FILE * pFile;
 	ISynchronizer* synchro;
 
-	FunctorWriter(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, FILE * pFile,ISynchronizer* synchro)
+	FunctorWriter(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, FILE * pFile,ISynchronizer* synchro)
 	:  quasiDico(quasiDico), kmer_size(kmer_size), pFile(pFile),synchro(synchro) {
 		position=0;
 	}
@@ -111,7 +111,7 @@ void SRC_linker_disk::create_quasi_dictionary (int fingerprint_size, int nbCores
 	//we compute the quasidico
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
 	int gamma(10);//TODO parameter gamma
-	quasiDico = quasiDictionnaryKeyGeneric<IteratorKmerH5Wrapper, uint32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
+	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, uint32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
 	//we count the occurence of kmer in the bank file (including false positive)
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));
 	ISynchronizer* synchro = System::thread().newSynchronizer();
@@ -133,12 +133,12 @@ void SRC_linker_disk::create_quasi_dictionary (int fingerprint_size, int nbCores
 
 
 struct FunctorIndexer{
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
 	FILE * pFile;
 	ISynchronizer* synchro;
 
-	FunctorIndexer(quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, FILE * pFile,ISynchronizer* synchro)
+	FunctorIndexer(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, FILE * pFile,ISynchronizer* synchro)
 	:  quasiDico(quasiDico), kmer_size(kmer_size), pFile(pFile),synchro(synchro) {
 	}
 
@@ -189,7 +189,7 @@ public:
 	FILE* outFile;
 	FILE* pFile;
 	int kmer_size;
-	quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
 	int threshold;
 	uint32_t position;
 	int count;
@@ -213,7 +213,7 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasiDictionnaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold,  FILE * pFile)
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold,  FILE * pFile)
 	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), pFile(pFile), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 	}
