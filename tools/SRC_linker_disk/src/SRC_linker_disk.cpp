@@ -110,7 +110,7 @@ void SRC_linker_disk::create_quasi_dictionary (int fingerprint_size, int nbCores
 	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	//we compute the quasidico
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	int gamma(10);//TODO parameter gamma
+	int gamma(2);//TODO parameter gamma
 	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, uint32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
 	//we count the occurence of kmer in the bank file (including false positive)
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));

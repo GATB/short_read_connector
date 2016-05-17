@@ -56,7 +56,7 @@ void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const 
 	nbSolidKmers = solidKmers.getNbItems();
 	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	int gamma(10);//TODO parameter
+	int gamma(2);//TODO parameter
 	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
     
     cout<<"Empty quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;

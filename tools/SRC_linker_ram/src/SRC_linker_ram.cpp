@@ -44,7 +44,8 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size){
 		exit(0);
 	}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	quasiDico = quasidictionaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, 10);
+	int gamma(2);//TODO parameter gamma
+	quasiDico = quasidictionaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
 	// gamma = 10
 }
 
