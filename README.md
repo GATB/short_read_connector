@@ -3,8 +3,12 @@
 
 
 # What is SRC?
+Short read connector enables the comparisons of two read sets *B* and *Q*. For each read from *Q* it provides either:
+ * The number of occurrences of each *k*-mers of the read in the set *B* (SRC_counter)
+ or
+ * A list of reads from *B* that share enough *k*-mers with the tested read from *B*
 
-TODO
+
 # Getting the latest source code
 
 ## Requirements
@@ -15,11 +19,12 @@ c++ compiler; compilation was tested with gcc and g++ version>=4.5 (Linux) and c
 
 ## Instructions
 
+
     # get a local copy of DiscoSnp source code
-    todo
+    git clone --recursive https://github.com/GATB/rconnector.git
     
     # compile the code an run a simple test on your computer
-    cd commet_linked
+    cd gatb-rconnector
     sh INSTALL
 
 #Getting a binary stable release
