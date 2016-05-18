@@ -10,6 +10,7 @@ using namespace std;
 static const char* STR_URI_BANK_INPUT = "-bank";
 static const char* STR_URI_QUERY_INPUT = "-query";
 static const char* STR_FINGERPRINT = "-fingerprint_size";
+static const char* STR_GAMMA = "-gamma";
 static const char* STR_THRESHOLD = "-kmer_threshold";
 static const char* STR_OUT_FILE = "-out";
 static const char* STR_CORE = "-core";
@@ -21,6 +22,7 @@ SRC_linker_disk::SRC_linker_disk ()  : Tool ("SRC_linker_disk"){
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
 	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal number of shared kmers for considering 2 reads as similar",	false, "10"));
+	getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
 	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
 }
@@ -110,8 +112,7 @@ void SRC_linker_disk::create_quasi_dictionary (int fingerprint_size, int nbCores
 	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	//we compute the quasidico
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	int gamma(2);//TODO parameter gamma
-	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, uint32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
+	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, uint32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma_value);
 	//we count the occurence of kmer in the bank file (including false positive)
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));
 	ISynchronizer* synchro = System::thread().newSynchronizer();
@@ -300,7 +301,7 @@ void SRC_linker_disk::parse_query_sequences (int threshold, const int nbCores){
 void SRC_linker_disk::execute (){
 	int nbCores = getInput()->getInt(STR_CORE);
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
-	cout<<"fingerprint = "<<fingerprint_size<<endl;
+    gamma_value = getInput()->getInt(STR_GAMMA);
 	create_quasi_dictionary(fingerprint_size,nbCores);
 	fill_quasi_dictionary(nbCores);
 	int threshold = getInput()->getInt(STR_THRESHOLD);
@@ -308,10 +309,11 @@ void SRC_linker_disk::execute (){
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
-	getInfo()->add (2, "Reference bank:",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
-	getInfo()->add (2, "Query bank:",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
-	getInfo()->add (2, "Fingerprint size:",  "%d",  fingerprint_size);
-	getInfo()->add (2, "Threshold size:",  "%d",  threshold);
+	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
+	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
+    getInfo()->add (2, "gamma",  "%d",  gamma_value);
+	getInfo()->add (2, "Threshold size",  "%d",  threshold);
 	getInfo()->add (1, "output");
-	getInfo()->add (2, "Results written in:",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
+	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
 }

@@ -11,6 +11,7 @@ using namespace std;
 static const char* STR_URI_BANK_INPUT = "-bank";
 static const char* STR_URI_QUERY_INPUT = "-query";
 static const char* STR_FINGERPRINT = "-fingerprint_size";
+static const char* STR_GAMMA = "-gamma";
 static const char* STR_THRESHOLD = "-kmer_threshold";
 static const char* STR_OUT_FILE = "-out";
 static const char* STR_CORE = "-core";
@@ -24,6 +25,7 @@ SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
 	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal number of shared kmers for considering 2 reads as similar",    false, "10"));
+	getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
 	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
 }
@@ -56,8 +58,7 @@ void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const 
 	nbSolidKmers = solidKmers.getNbItems();
 	if(nbSolidKmers==0){cout<<"No solid kmers in bank -- exit"<<endl;exit(0);}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	int gamma(2);//TODO parameter
-	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma);
+	quasiDico = quasidictionaryKeyGeneric<IteratorKmerH5Wrapper, unsigned char> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma_value);
     
     cout<<"Empty quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
     
@@ -231,6 +232,7 @@ void SRC_counter::parse_query_sequences (int threshold, const int nbCores){
 void SRC_counter::execute (){
 	int nbCores = getInput()->getInt(STR_CORE);
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
+    gamma_value = getInput()->getInt(STR_GAMMA);
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
 	// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
@@ -247,10 +249,11 @@ void SRC_counter::execute (){
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
-	getInfo()->add (2, "Reference bank:",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
-	getInfo()->add (2, "Query bank:",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
-	getInfo()->add (2, "Fingerprint size:",  "%d",  fingerprint_size);
-	getInfo()->add (2, "Threshold size:",  "%d",  threshold);
+	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
+	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
+    getInfo()->add (2, "gamma",  "%d",  gamma_value);
+	getInfo()->add (2, "Threshold size",  "%d",  threshold);
 	getInfo()->add (1, "output");
-	getInfo()->add (2, "Results written in:",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
+	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
 }

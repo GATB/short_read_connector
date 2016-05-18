@@ -31,6 +31,7 @@ echo -e "\t\t -p prefix. All out files will start with this prefix. Default=\"sh
 echo -e "\t\t -g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
 echo -e "\t\t -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
 echo -e "\t\t -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12"
+echo -e "\t\t -G value. gamma value. MPHF expert users parameter - Default=2"
 echo -e "\t\t -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
 echo -e "\t\t -s: minimal number of kmer shared by two reads to be considered as similar. Default=3"
 echo -e "\t\t -t: number of thread used. Default=1"
@@ -44,6 +45,7 @@ bank_set=""
 query_set=""
 kmer_size=31
 abundance_min=2
+gamma=2
 fingerprint_size=12
 kmer_threshold=3
 core_used=0
@@ -55,12 +57,17 @@ countMode=0
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts "hgb:q:p:k:a:s:t:f:dc" opt; do
+while getopts "hgb:q:p:k:a:s:t:f:G:dc" opt; do
 case $opt in
 
 h)
 help
 exit
+;;
+
+G)
+echo "use gamma: $OPTARG" >&2
+gamma=$OPTARG
 ;;
 
 d)
@@ -173,25 +180,24 @@ echo "there was a problem with the kmer counting."
 exit 1
 fi
 fi
-
-#unsorted_result_file=${result_file}"_unsorted"
 # Compare read sets
 
 
 # SRC_LINKER_RAM
 if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
-    	cmd="$EDIR/build/bin/SRC_linker_ram -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+    	cmd="$EDIR/build/bin/SRC_linker_ram"
     else
 		# SRC_COUNTER
-       	cmd="$EDIR/build/bin/SRC_counter -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+       	cmd="$EDIR/build/bin/SRC_counter"
        fi
 else
 	# SRC_LINKER_DISK
-	cmd="$EDIR/build/bin/SRC_linker_disk -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used}"
+	cmd="$EDIR/build/bin/SRC_linker_disk"
 fi
 
-
+# adding options
+cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}"
 
 echo ${cmd}
 ${cmd}

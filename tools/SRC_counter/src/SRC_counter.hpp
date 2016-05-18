@@ -35,6 +35,7 @@ private:
 	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > quasiDico;
 	u_int64_t nbSolidKmers;
 	int kmer_size;
+    int gamma_value;
 	static const size_t span = KMER_SPAN(1);
 
 public:

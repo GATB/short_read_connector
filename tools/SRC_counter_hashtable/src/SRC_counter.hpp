@@ -47,6 +47,7 @@ private:
 //	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > quasiDico;
 	std::unordered_map<u_int64_t, unsigned char> hashDico;
 	u_int64_t nbSolidKmers;
+    int gamma_value;
 	int kmer_size;
 	static const size_t span = KMER_SPAN(1);
 
