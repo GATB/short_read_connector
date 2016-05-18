@@ -91,7 +91,7 @@ struct FunctorIndexer{
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
-		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
+		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex()+1);
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
 			quasiDico.set_value((itKmer)->value().getVal(), read_id);
@@ -181,7 +181,7 @@ public:
 					toPrint=to_string(seq.getIndex()+1)+":";
 					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				toPrint=to_string(matched_read.first+1)+"-"+to_string(std::get<1>(matched_read.second))+" ";
+				toPrint=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
 				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
 		}
