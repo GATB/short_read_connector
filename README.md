@@ -62,24 +62,27 @@ Let's look to a few usual cases (italic strings indicate the composition of a fi
    * fof.txt:
      * fof_reads.txt:
    
-   with fof_reads.txt:
+     with fof_reads.txt:
     
      * reads_R1.fq.gz
      * reads_R2.fq.gz
 * Case3: I've two read sets each composed of a unique read file: reads1.fq.gz and reads2.fq.gz:
-   fof.txt:
-    reads1.fq.gz
-    reads2.fq.gz
+   * fof.txt:
+     * reads1.fq.gz
+     * reads2.fq.gz
 * Case4:  I've two read sets each composed two read files: reads1_R1.fq.gz and reads1_R2.fq.gz and  reads2_R1.fq.gz and reads2_R2.fq.gz:
-   fof.txt:
-    fof_reads1.txt
-    fof_reads2.txt
+   * fof.txt:
+     * fof_reads1.txt
+     * fof_reads2.txt
+  
    with fof_reads1.txt:
-    reads1_R1.fq.gz
-    reads1_R2.fq.gz
+  
+     * reads1_R1.fq.gz
+     * reads1_R2.fq.gz
+   
    with fof_reads2.txt:
-    reads2_R1.fq.gz
-    reads2_R2.fq.gz
+     * reads2_R1.fq.gz
+     * reads2_R2.fq.gz
 * and so on...
 
    
