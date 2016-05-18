@@ -56,14 +56,16 @@ Calling SRC_linker between read sets *bank* and *query*:
 We use file of files format. The input read sets are provided using a file of file(s). The file of file(s) contains on each line a read file or another file of file(s).
 Let's look to a few usual cases (italic strings indicate the composition of a file):
 * Case1: I've a unique read set composed of a unique read file (reads.fq.gz). 
-   fof.txt:
-   reads.fq.gz
+   * fof.txt:
+   * reads.fq.gz
 * Case2: I've a unique read set composed of a couple of read files (reads_R1.fq.gz and reads_R2.fq.gz). This may be the case in case of pair end sequencing.
-   fof.txt:
-    fof_reads.txt:
+   * fof.txt:
+     * fof_reads.txt:
+   
    with fof_reads.txt:
-    reads_R1.fq.gz
-    reads_R2.fq.gz
+    
+     * reads_R1.fq.gz
+     * reads_R2.fq.gz
 * Case3: I've two read sets each composed of a unique read file: reads1.fq.gz and reads2.fq.gz:
    fof.txt:
     reads1.fq.gz
