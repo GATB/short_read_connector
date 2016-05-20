@@ -1,0 +1,36 @@
+import sys
+import gzip
+
+            
+
+def filter(file_name, threshold):
+    if "gz" in file_name:
+        sequencefile=gzip.open(file_name,"r")
+    else: 
+        sequencefile=open(file_name,"r")
+        
+    #qseqid sseqid evalue pident length qlen slen
+    #OM-RGC.v1.000000024_Eukaryota	OM-RGC.v1.008747545_Eukaryota	2.22e-04	96.970	33	30690	825
+    
+    for line in sequencefile.readlines():
+        tab_line = line.rstrip().split()
+        # the total size of aligned sequence aligned=(float(tab_line[3])*float(tab_line[4]))
+        aligned=(float(tab_line[3])*float(tab_line[4]))
+        # divided by
+        # the smaller sequence min(tab_line[5]),(tab_line[6])
+        min_sequences=min(int(tab_line[5]),int(tab_line[6]))
+        # < percentage threshold
+        ratio = aligned/float(min_sequences)
+        if  ratio <threshold: continue
+        print line,
+    
+    
+if len(sys.argv)<3 :
+    print "USAGE"
+    print " Used to remove blast alignments whose aligned nucleotides portion are bellow a threshold wrt size of sequences"
+    print " For other needs, contact pierre.peterlongo@inria.fr"
+    print "COMMAND"
+    print  sys.argv[0],"<blast cvs file with -outfmt \"6 qseqid sseqid evalue pident length\"> <threshold>"
+    sys.exit(1)
+filter(sys.argv[1], float(sys.argv[2]))
+
