@@ -2,6 +2,7 @@ import sys
 import gzip
 
             
+    
 
 def filter(file_name, threshold):
     if "gz" in file_name:
@@ -11,9 +12,13 @@ def filter(file_name, threshold):
         
     #qseqid sseqid evalue pident length qlen slen
     #OM-RGC.v1.000000024_Eukaryota	OM-RGC.v1.008747545_Eukaryota	2.22e-04	96.970	33	30690	825
-    
+    previous_query="rien"
+    previous_target="rien"
     for line in sequencefile.readlines():
         tab_line = line.rstrip().split()
+        if tab_line[0]==previous_query and tab_line[1]==previous_target: continue
+        previous_query=tab_line[0]
+        previous_target=tab_line[1]
         # the total size of aligned sequence aligned=(float(tab_line[3])*float(tab_line[4]))
         aligned=(float(tab_line[3])*float(tab_line[4]))
         # divided by
