@@ -38,7 +38,7 @@ def sequence_sizes(bank_file_name):
     return sizes
             
 
-def convert_SRC_linker_output(headers, sizes, k, remove_similar_reads, SRC_linker_output_file_name):
+def convert_SRC_linker_output(headers, sizes, k, threshold, remove_similar_reads, SRC_linker_output_file_name):
     print "qseqid\tsseqid\tevalue\tpident"
     if "gz" in SRC_linker_output_file_name:
         sequencefile=gzip.open(SRC_linker_output_file_name,"r")
@@ -56,26 +56,27 @@ def convert_SRC_linker_output(headers, sizes, k, remove_similar_reads, SRC_linke
         for target in targets:
             target_read_id=int(target.split('-')[0])
             if remove_similar_reads and target_read_id == query_read_id: continue
-            coverage = 200*k*int(target.split('-')[1])/float(sizes[query_read_id]+sizes[target_read_id])
+            coverage = 100*k*int(target.split('-')[1])/float(min(sizes[query_read_id],sizes[target_read_id]))
             print headers[query_read_id]+"\t"+headers[target_read_id]+"\t0.0\t%.4g"%(coverage)
     
     
-if len(sys.argv)<4 or len(sys.argv)>5:
+if len(sys.argv)<5 or len(sys.argv)>6:
     print "USAGE"
     print " Used to transform the SRC_linker output into a format usable by mosaic finder"
     print " This tool must not be used when SRC_linker was used to compare two distinct read sets but only when SRC_linker was used to compare a read set against itself"
     print " For other needs, contact pierre.peterlongo@inria.fr"
     print "COMMAND"
-    print  sys.argv[0],"<banq file (fasta format, each sequence on ONE line, gzipped or not)> <SRC_linker output file> <kmer size (used by SRC_linker)> <optional 'R': if present similarity between read and itself are removed>"
+    print  sys.argv[0],"<banq file (fasta format, each sequence on ONE line, gzipped or not)> <SRC_linker output file> <kmer size (used by SRC_linker)> <threshold: bellow this percentage, alignements whose coverage ratio is lower are not output> <optional 'R': if present similarity between read and itself are removed>"
     sys.exit(1)
 headers=index_headers(sys.argv[1])
 sizes=sequence_sizes(sys.argv[1])
 k=int(sys.argv[3])
+threshold=int(sys.argv[4])
 remove_similar_reads = False
-if len(sys.argv) == 5: 
-    if sys.argv[4]=='R': 
+if len(sys.argv) == 6: 
+    if sys.argv[5]=='R': 
         remove_similar_reads = True
 
 
-convert_SRC_linker_output(headers,sizes,k, remove_similar_reads, sys.argv[2])
+convert_SRC_linker_output(headers,sizes,k, threshold, remove_similar_reads, sys.argv[2])
 
