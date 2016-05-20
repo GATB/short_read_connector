@@ -57,6 +57,7 @@ def convert_SRC_linker_output(headers, sizes, k, threshold, remove_similar_reads
             target_read_id=int(target.split('-')[0])
             if remove_similar_reads and target_read_id == query_read_id: continue
             coverage = 100*k*int(target.split('-')[1])/float(min(sizes[query_read_id],sizes[target_read_id]))
+            if coverage<threshold: continue
             print headers[query_read_id]+"\t"+headers[target_read_id]+"\t0.0\t%.4g"%(coverage)
     
     
