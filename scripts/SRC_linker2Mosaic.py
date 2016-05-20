@@ -55,6 +55,7 @@ def convert_SRC_linker_output(headers, sizes, k, SRC_linker_output_file_name):
         targets=line.split(':')[1].split(' ')
         for target in targets:
             target_read_id=int(target.split('-')[0])
+            if target_read_id == query_read_id: continue
             coverage = 200*k*int(target.split('-')[1])/float(sizes[query_read_id]+sizes[target_read_id])
             print headers[query_read_id]+"\t"+headers[target_read_id]+"\t0.0\t%.4g"%(coverage)
         
