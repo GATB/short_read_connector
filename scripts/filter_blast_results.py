@@ -19,6 +19,7 @@ def filter(file_name, threshold):
         if tab_line[0]==previous_query and tab_line[1]==previous_target: continue
         previous_query=tab_line[0]
         previous_target=tab_line[1]
+        if float(tab_line[3])<90: continue
         # the total size of aligned sequence aligned=(float(tab_line[3])*float(tab_line[4]))
         aligned=(float(tab_line[3])*float(tab_line[4]))
         # divided by
