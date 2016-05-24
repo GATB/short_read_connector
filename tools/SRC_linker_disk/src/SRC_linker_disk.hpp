@@ -40,7 +40,7 @@ class SRC_linker_disk : public Tool
 {
 
 private:
-	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
+	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, uint64_t > quasiDico;
 	u_int64_t nbSolidKmers;
     int gamma_value;
 	int kmer_size;
