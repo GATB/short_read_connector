@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -p linker
+bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -p linker
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on linker"
   exit 1
@@ -21,7 +21,7 @@ fi
 
 
 
-sh ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -d -p linker_disk
+bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -d -p linker_disk
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on linker_disk"
   exit 1
@@ -42,7 +42,7 @@ fi
 
 
 
-sh ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter
+bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on counter"
   exit 1
