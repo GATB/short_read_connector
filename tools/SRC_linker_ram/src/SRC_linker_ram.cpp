@@ -149,8 +149,8 @@ public:
 	void operator() (Sequence& seq){
 		if(not correct(seq)){return;}
 		bool exists;
-		associated_read_ids={};
- 		similar_read_ids_position_count={};
+		associated_read_ids={}; // list of the ids of reads from the bank where a kmer occurs
+ 		similar_read_ids_position_count={}; // tmp list of couples <next free position, count>
 		itKmer->setData (seq.getData());
 		u_int i=0; // position on the read
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
