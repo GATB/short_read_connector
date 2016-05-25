@@ -16,7 +16,7 @@ static const char* STR_OUT_FILE = "-out";
 static const char* STR_CORE = "-core";
 
 
-static const uint buff(10);
+static const uint buff(5);
 
 SRC_linker_disk::SRC_linker_disk ()  : Tool ("SRC_linker_disk"){
 	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
@@ -129,12 +129,6 @@ void SRC_linker_disk::create_quasi_dictionary (int fingerprint_size, int nbCores
 	dispatcher.iterate (itSeq, FunctorCount(quasiDico, kmer_size));
 	//we create the blank file
 	pFile = fopen ("Erase_Me", "w+");
-	if(pFile==NULL)
-		exit(0);
-	uint64_t position(0);
-	uint i(0);
-	uint abundance(0);
-	bool exists;
 	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers", nbSolidKmers);
 	Dispatcher dispatcher2 (1, 1000);
 	dispatcher2.iterate (itKmers, FunctorWriter(quasiDico, kmer_size,pFile,synchro));
@@ -142,7 +136,6 @@ void SRC_linker_disk::create_quasi_dictionary (int fingerprint_size, int nbCores
 	fwrite(toPrint.c_str(),1,(buff+1)*8, pFile);
 	fflush(pFile);
 	fclose(pFile);
-	// cin.get();
 }
 
 
@@ -169,7 +162,7 @@ struct FunctorIndexer{
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
-		uint32_t read_id(static_cast<uint32_t>(seq.getIndex())+1);
+		uint64_t read_id(static_cast<uint64_t>(seq.getIndex())+1);
 		uint64_t position;
 		uint64_t id[buff];
 		bool exists;
@@ -178,13 +171,10 @@ struct FunctorIndexer{
 			// find the initial pos with the quasi-dico and find the first unused (non 0)
 			quasiDico->get_value(itKmer->value().getVal(),exists,position);
 			if(not exists) {continue;}
-			// synchro->lock();
-			// cout<<position<<endl;
-			// cin.get();
 			fseek (pFile , position , SEEK_SET);
 			while(true){
 				fread(id,1,8*buff,pFile);
-				// cout<<lol<<endl;
+				// cout<<"lol"<<endl;
 				for(uint ii(0);ii<buff;++ii){
 					if(id[ii]==0){
 						fseek ( pFile , position+8*ii , SEEK_SET );
@@ -195,7 +185,9 @@ struct FunctorIndexer{
 				position+=8*buff;
 			}
 			end:
-			continue;
+			;
+			// cout<<"lol"<<endl;
+			// cin.get();
 			// synchro->unlock();
 		}
 	}
@@ -223,9 +215,8 @@ public:
 	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, uint64_t>* quasiDico;
 	int threshold;
 	uint64_t position;
-	int count;
-	std::vector<uint> associated_read_ids;
-	std::unordered_map<uint, std::pair <uint,uint>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
+	std::vector<uint64_t> associated_read_ids;
+	std::unordered_map<uint64_t, std::pair <uint,uint>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
 
@@ -265,7 +256,6 @@ public:
 			associated_read_ids={};
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,position);
 			if(not exists) {++i;continue;}
-			// synchro->lock();
 			fseek ( pFile , position , SEEK_SET );
 			while(true){
 				fread (id,1,8*buff,pFile);
@@ -278,9 +268,8 @@ public:
 				}
 			}
 			end:
-			// synchro->unlock();
 			for(auto &read_id: associated_read_ids){
-				std::unordered_map<uint, std::pair <uint,uint>>::const_iterator element = similar_read_ids_position_count.find(read_id);
+				std::unordered_map<uint64_t, std::pair <uint,uint>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
 					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
 				}else{  // a kmer is already shared with this read
@@ -341,7 +330,7 @@ void SRC_linker_disk::execute (){
 	create_quasi_dictionary(fingerprint_size,nbCores);
 	cout<<2<<endl;
 	fill_quasi_dictionary(nbCores);
-		cout<<3<<endl;
+	cout<<3<<endl;
 	int threshold = getInput()->getInt(STR_THRESHOLD);
 	parse_query_sequences(threshold-1, nbCores); //-1 avoids >=
 
