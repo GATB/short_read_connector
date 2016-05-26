@@ -16,7 +16,7 @@ c++ compiler; compilation was tested with gcc and g++ version>=4.5 (Linux) and c
 ## Instructions
 
 
-    # get a local copy of DiscoSnp source code
+    # get a local copy of source code
     git clone --recursive https://github.com/GATB/rconnector.git
     
     # compile the code an run a simple test on your computer
