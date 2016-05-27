@@ -33,7 +33,7 @@ echo  "	-k value. Set the length of used kmers. Must fit the compiled value. Def
 echo  "	-f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12"
 echo  "	-G value. gamma value. MPHF expert users parameter - Default=2"
 echo  "	-a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
-echo  "	-s: minimal number of kmer shared by two reads to be considered as similar. Default=3"
+echo  "	-s: Minimal percentage of shared kmer span for considering 2 reads as similar. The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. Default=75"
 echo  "	-t: number of thread used. Default=0"
 echo  "	-d:  use disk over RAM (slower and no impact with -c option)"
 echo  "	-c: use short_read_connector_counter (SRC_counter)"
@@ -47,7 +47,7 @@ kmer_size=31
 abundance_min=2
 gamma=2
 fingerprint_size=12
-kmer_threshold=3
+kmer_threshold=75
 core_used=0
 prefix="short_read_connector_res"
 remove=1

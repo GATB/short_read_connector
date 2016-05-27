@@ -23,7 +23,7 @@ SRC_linker_disk::SRC_linker_disk ()  : Tool ("SRC_linker_disk"){
 	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
-	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal number of shared kmers for considering 2 reads as similar",	false, "10"));
+	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal percentage of shared kmer span for considering 2 reads as similar. The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%.",    false, "75"));
 	getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
 	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
@@ -268,37 +268,56 @@ public:
 				}
 			}
 			end:
-			for(auto &read_id: associated_read_ids){
+//			for(auto &read_id: associated_read_ids){
+//				std::unordered_map<uint64_t, std::pair <uint,uint>>::const_iterator element = similar_read_ids_position_count.find(read_id);
+//				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
+//					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
+//				}else{  // a kmer is already shared with this read
+//					std::pair <int,int> viablepos_nbshared = (element->second);
+//					if(i>=viablepos_nbshared.first){ // the current position does not overlap the previous shared kmer
+//						viablepos_nbshared.first = i+kmer_size; // next non overlapping position
+//						viablepos_nbshared.second = viablepos_nbshared.second+1; // a new kmer shared.
+//						similar_read_ids_position_count[read_id] = viablepos_nbshared;
+//					}
+//				}
+//			}
+            
+            for(auto &read_id: associated_read_ids){
 				std::unordered_map<uint64_t, std::pair <uint,uint>>::const_iterator element = similar_read_ids_position_count.find(read_id);
 				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
-					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
+					similar_read_ids_position_count[read_id]=std::make_pair(i, kmer_size);
 				}else{  // a kmer is already shared with this read
-					std::pair <int,int> viablepos_nbshared = (element->second);
-					if(i>=viablepos_nbshared.first){ // the current position does not overlap the previous shared kmer
-						viablepos_nbshared.first = i+kmer_size; // next non overlapping position
-						viablepos_nbshared.second = viablepos_nbshared.second+1; // a new kmer shared.
-						similar_read_ids_position_count[read_id] = viablepos_nbshared;
-					}
+					std::pair <int,int> lastpos_spankmer = (element->second);
+                    // update spanning, up to a kmer size
+                    if ((i-lastpos_spankmer.first)<kmer_size)   lastpos_spankmer.second += i-lastpos_spankmer.first;
+                    else                                        lastpos_spankmer.second += kmer_size;
+                    lastpos_spankmer.first=i;                                            // update last position of a shared kmer with this read
+                    similar_read_ids_position_count[read_id] = lastpos_spankmer;
 				}
 			}
+
 			++i;
 		}
 		string toPrint;
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
 		for (auto &matched_read:similar_read_ids_position_count){
-			if (std::get<1>(matched_read.second) > threshold) {
+			if (std::get<1>(matched_read.second) >= (threshold*seq.getDataSize()/100)) {
 				if (not read_id_printed){
 					read_id_printed=true;
-					synchro->lock();
+                    //					synchro->lock();
 					toPrint=to_string(seq.getIndex()+1)+":";
-					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+                    //					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				toPrint=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
-				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+				toPrint+=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
+                //				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
+            
 		}
 		if(read_id_printed){
-			fwrite("\n", sizeof(char), 1, outFile);
+            synchro->lock();
+            toPrint+="\n";
+            fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+            //			fwrite("\n", sizeof(char), 1, outFile);
 			synchro->unlock ();
 		}
 	}
@@ -332,7 +351,7 @@ void SRC_linker_disk::execute (){
 	fill_quasi_dictionary(nbCores);
 	cout<<3<<endl;
 	int threshold = getInput()->getInt(STR_THRESHOLD);
-	parse_query_sequences(threshold-1, nbCores); //-1 avoids >=
+	parse_query_sequences(threshold, nbCores);
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
@@ -340,7 +359,7 @@ void SRC_linker_disk::execute (){
 	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
-	getInfo()->add (2, "Threshold size",  "%d",  threshold);
+	getInfo()->add (2, "Minimal kmer span percentage",  "%d",  threshold);
 	getInfo()->add (1, "output");
 	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
 }

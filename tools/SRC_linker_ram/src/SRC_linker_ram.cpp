@@ -23,7 +23,7 @@ SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
 	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
-	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal number of shared kmers for considering 2 reads as similar",    false, "10"));
+	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal percentage of shared kmer span for considering 2 reads as similar. The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%.",    false, "75"));
 	getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
 	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
@@ -111,7 +111,7 @@ void SRC_linker_ram::fill_quasi_dictionary (const int nbCores){
 }
 
 
-class FunctorQuery
+class FunctorQueryNbKmers // FunctorQuery used during PSC submission : kn non overlapping kmers
 {
 public:
 	ISynchronizer* synchro;
@@ -124,7 +124,7 @@ public:
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
 
-	FunctorQuery(const FunctorQuery& lol)
+	FunctorQueryNbKmers(const FunctorQueryNbKmers& lol)
 	{
 		synchro=lol.synchro;
 		outFile=lol.outFile;
@@ -137,13 +137,13 @@ public:
 		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
+	FunctorQueryNbKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
 	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
 
-	~FunctorQuery () {
+	~FunctorQueryNbKmers () {
 	}
 
 	void operator() (Sequence& seq){
@@ -193,6 +193,95 @@ public:
 };
 
 
+
+
+class FunctorQuerySpanKmers // FunctorQuery used after claires discussion: number of positions covered by a shared kmer.
+{
+public:
+	ISynchronizer* synchro;
+	FILE* outFile;
+	int kmer_size;
+	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
+	int threshold;
+	vector<u_int32_t> associated_read_ids;
+	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
+	Kmer<KMER_SPAN(1)>::ModelCanonical model;
+	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
+    
+	FunctorQuerySpanKmers(const FunctorQuerySpanKmers& lol)
+	{
+		synchro=lol.synchro;
+		outFile=lol.outFile;
+		kmer_size=lol.kmer_size;
+		quasiDico=lol.quasiDico;
+		threshold=lol.threshold;
+		associated_read_ids=lol.associated_read_ids;
+		similar_read_ids_position_count=lol.similar_read_ids_position_count;
+		model=lol.model;
+		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+	}
+    
+	FunctorQuerySpanKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
+		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
+		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+	}
+    
+	FunctorQuerySpanKmers () {
+	}
+    
+	void operator() (Sequence& seq){
+		if(not correct(seq)){return;}
+		bool exists;
+		associated_read_ids={}; // list of the ids of reads from the bank where a kmer occurs
+ 		similar_read_ids_position_count={}; // tmp list of couples <last used position, kmer spanning>
+		itKmer->setData (seq.getData());
+		u_int i=0; // position on the read
+		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
+			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
+			if(!exists) {++i;continue;}
+			for(auto &read_id: associated_read_ids){
+				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
+				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
+					similar_read_ids_position_count[read_id]=std::make_pair(i, kmer_size);
+				}else{  // a kmer is already shared with this read
+					std::pair <int,int> lastpos_spankmer = (element->second);
+                    // update spanning, up to a kmer size
+                    if ((i-lastpos_spankmer.first)<kmer_size)   lastpos_spankmer.second += i-lastpos_spankmer.first;
+                    else                                        lastpos_spankmer.second += kmer_size;
+                    lastpos_spankmer.first=i;                                            // update last position of a shared kmer with this read
+                    similar_read_ids_position_count[read_id] = lastpos_spankmer;
+				}
+			}
+			++i;
+		}
+		string toPrint;
+		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
+		for (auto &matched_read:similar_read_ids_position_count){
+			if (std::get<1>(matched_read.second) >= (threshold*seq.getDataSize()/100)) {
+				if (not read_id_printed){
+					read_id_printed=true;
+//					synchro->lock();
+					toPrint=to_string(seq.getIndex()+1)+":";
+//					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+				}
+				toPrint+=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
+//				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+			}
+            
+		}
+		if(read_id_printed){
+            synchro->lock();
+            toPrint+="\n";
+            fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+//			fwrite("\n", sizeof(char), 1, outFile);
+			synchro->unlock ();
+		}
+	}
+};
+
+
+
 void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores){
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
@@ -204,7 +293,8 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores){
 	ProgressIterator<Sequence> itSeq (*bank);
 	ISynchronizer* synchro = System::thread().newSynchronizer();
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold));
+	dispatcher.iterate (itSeq, FunctorQuerySpanKmers(synchro,pFile, kmer_size,&quasiDico, threshold));
+//	dispatcher.iterate (itSeq, FunctorQueryNbKmers(synchro,pFile, kmer_size,&quasiDico, threshold));
 	fclose (pFile);
 	delete synchro;
 }
@@ -227,7 +317,7 @@ void SRC_linker_ram::execute (){
 	fill_quasi_dictionary(nbCores);
 
 	int threshold = getInput()->getInt(STR_THRESHOLD);
-	parse_query_sequences(threshold-1, nbCores); //-1 avoids >=
+	parse_query_sequences(threshold, nbCores);
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
@@ -235,7 +325,7 @@ void SRC_linker_ram::execute (){
 	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
-	getInfo()->add (2, "Threshold size",  "%d",  threshold);
+	getInfo()->add (2, "Minimal kmer span percentage",  "%d",  threshold);
 	getInfo()->add (1, "output");
 	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
 }
