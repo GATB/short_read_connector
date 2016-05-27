@@ -12,11 +12,11 @@ def uniformizator(file_name):
         dic={}
         tab_line = line.rstrip().split(':')[1].split()
         for id_and_count in tab_line:
-            dic[id_and_count.split('-')[0]]=id_and_count.split('-')[1]
-        string=line.rstrip().split(':')[0]+':'
-        for key in dic.keys(): 
-            string+=key+'-'+dic[key]+' '
-        print string
+            dic[int(id_and_count.split('-')[0])]=int(id_and_count.split('-')[1])
+        stringline=line.rstrip().split(':')[0]+':'
+        for key in sorted(dic.keys()): 
+            stringline+=str(key)+'-'+str(dic[key])+' '
+        print stringline
         # print sorted(dic.get)
         # for key in sorted(dic, key=dic.get):
           # print key, dic[key]
