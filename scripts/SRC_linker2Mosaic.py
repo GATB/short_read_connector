@@ -45,7 +45,7 @@ def convert_SRC_linker_output(headers, sizes, k, threshold, remove_similar_reads
     else: 
         sequencefile=open(SRC_linker_output_file_name,"r")
         
-    #31:1246-3 479-3 1043-3 820-3 
+    #31:1246-30 479-63 1043-53 820-83 
     
     for line in sequencefile.readlines():
         if line[0]=='#': #header
@@ -56,9 +56,9 @@ def convert_SRC_linker_output(headers, sizes, k, threshold, remove_similar_reads
         for target in targets:
             target_read_id=int(target.split('-')[0])
             if remove_similar_reads and target_read_id == query_read_id: continue
-            coverage = 100*k*int(target.split('-')[1])/float(min(sizes[query_read_id],sizes[target_read_id]))
-            if coverage<threshold: continue
-            print headers[query_read_id]+"\t"+headers[target_read_id]+"\t0.0\t%.4g"%(coverage)
+            coverage = target.split('-')[1]
+            if int(coverage)<threshold: continue
+            print headers[query_read_id]+"\t"+headers[target_read_id]+"\t0.0\t"+(coverage)
     
     
 if len(sys.argv)<5 or len(sys.argv)>6:
@@ -71,7 +71,7 @@ if len(sys.argv)<5 or len(sys.argv)>6:
     sys.exit(1)
 headers=index_headers(sys.argv[1])
 sizes=sequence_sizes(sys.argv[1])
-k=int(sys.argv[3])
+k=int(sys.argv[3]) # USELESS, TO REMOVE. 
 threshold=int(sys.argv[4])
 remove_similar_reads = False
 if len(sys.argv) == 6: 
