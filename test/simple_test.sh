@@ -72,7 +72,7 @@ fi
 ##########################################################
 
 # RUN SRC
-bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter
+bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter -t 1
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on counter"
   exit 1
