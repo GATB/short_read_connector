@@ -258,14 +258,15 @@ public:
 		string toPrint;
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
 		for (auto &matched_read:similar_read_ids_position_count){
-			if (std::get<1>(matched_read.second) >= (threshold*seq.getDataSize()/100)) {
+            float percentage_span_kmer = 100*std::get<1>(matched_read.second)/float(seq.getDataSize());
+			if (percentage_span_kmer >= (threshold*seq.getDataSize()/100)) {
 				if (not read_id_printed){
 					read_id_printed=true;
 //					synchro->lock();
 					toPrint=to_string(seq.getIndex()+1)+":";
 //					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				toPrint+=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
+				toPrint+=to_string(matched_read.first)+"-"+to_string(int(percentage_span_kmer))+" ";
 //				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
             
