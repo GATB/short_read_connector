@@ -28,7 +28,7 @@ def filter(file_name, threshold):
         # < percentage threshold
         ratio = aligned/float(min_sequences)
         if  ratio <threshold: continue
-        print line[0],line[1],line[2], ratio
+        print tab_line[0],tab_line[1],tab_line[2], ratio
     
     
 if len(sys.argv)<3 :
