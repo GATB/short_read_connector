@@ -3,10 +3,9 @@
 ##########################################################
 ## TEST RAM LINKER
 ##########################################################
-sort --version
 
 # RUN SRC
-bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -p linker
+(bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -p linker) > log_linker 2> log_linker_err
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on linker"
   exit 1
@@ -15,7 +14,7 @@ fi
 # UNIFORMIZE RESULTS
 python ../scripts/uniformize_SRC_linker_output.py linker.txt > linker_uniform.txt
 if [ $? -ne 0 ] ; then
-  echo "*** Test: FAILURE on uniformisator"
+  echo "*** Test: FAILURE on uniformisator ***"
   exit 1
 fi
 
@@ -73,9 +72,9 @@ echo "*** DIFF LINKER OK ***"
 ##########################################################
 
 # RUN SRC
-bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter -t 1
+bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter -t 1 > log_counter 2>log_linker_err
 if [ $? -ne 0 ] ; then
-  echo "*** Test: FAILURE on counter"
+  echo "*** Test: FAILURE on counter ***"
   exit 1
 fi
 
@@ -102,8 +101,8 @@ echo "*** DIFF COUNTER OK ***"
 ## CLEAN TEMP FILES
 ##########################################################
 
-rm -f Erase_Me *.h5 counter.txt counter_sorted.txt linker.txt linker_disk.txt linker_disk_sorted.txt linker_sorted.txt linker_uniform.txt linker_disk_uniform.txt counter_uniform.txt
+rm -f Erase_Me *.h5 counter.txt counter_sorted.txt linker.txt linker_disk.txt linker_disk_sorted.txt linker_sorted.txt linker_uniform.txt linker_disk_uniform.txt counter_uniform.txt log*
 
-echo "*** Test: OK"
+echo "*** Test: OK ***"
 
 exit 0
