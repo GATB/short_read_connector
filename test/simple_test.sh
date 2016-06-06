@@ -3,6 +3,7 @@
 ##########################################################
 ## TEST RAM LINKER
 ##########################################################
+sort --version
 
 # RUN SRC
 bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -p linker
@@ -32,7 +33,7 @@ if [ $? -ne 0 ] ; then
   exit 1
 fi
 
-
+echo "*** DIFF LINKER OK ***"
 
 ##########################################################
 ## TEST DISK LINKER --> UNAVAILABLE FOR NOW
@@ -95,6 +96,7 @@ if [ $? -ne 0 ] ; then
   exit 1
 fi
 
+echo "*** DIFF COUNTER OK ***"
 
 ##########################################################
 ## CLEAN TEMP FILES
