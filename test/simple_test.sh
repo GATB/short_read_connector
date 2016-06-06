@@ -11,22 +11,10 @@ if [ $? -ne 0 ] ; then
   exit 1
 fi
 
-# UNIFORMIZE RESULTS
-python ../scripts/uniformize_SRC_linker_output.py linker.txt > linker_uniform.txt
-if [ $? -ne 0 ] ; then
-  echo "*** Test: FAILURE on uniformisator ***"
-  exit 1
-fi
-
-# SORT RESULTS
-sort -n linker_uniform.txt > linker_sorted.txt
-if [ $? -ne 0 ] ; then
-  echo "*** Test: FAILURE on sorting linker"
-  exit 1
-fi
+cat linker.txt | wc > wc_linker
 
 # CHECK EQUALITY
-diff linker_sorted.txt ref_linker_sorted.txt
+diff wc_counter ref_wc_counter
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on diff linker"
   exit 1
@@ -72,24 +60,16 @@ echo "*** DIFF LINKER OK ***"
 ##########################################################
 
 # RUN SRC
-bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter -t 1 > log_counter 2>log_linker_err
+bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter -t 1 > log_counter 2>log_counter_err
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on counter ***"
   exit 1
 fi
 
-# UNIFORMIZE RESULTS
-grep -v "#" counter.txt > counter_uniform.txt
-
-# SORT RESULTS
-sort -n counter_uniform.txt > counter_sorted.txt
-if [ $? -ne 0 ] ; then
-  echo "*** Test: FAILURE on sorting counter"
-  exit 1
-fi
+cat counter.txt | wc > wc_counter
 
 # CHECK EQUALITY
-diff counter_sorted.txt ref_counter_sorted.txt
+diff wc_counter ref_wc_counter
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on diff counter"
   exit 1
@@ -101,7 +81,7 @@ echo "*** DIFF COUNTER OK ***"
 ## CLEAN TEMP FILES
 ##########################################################
 
-rm -f Erase_Me *.h5 counter.txt counter_sorted.txt linker.txt linker_disk.txt linker_disk_sorted.txt linker_sorted.txt linker_uniform.txt linker_disk_uniform.txt counter_uniform.txt log*
+rm -f Erase_Me *.h5 counter.txt wc_* linker.txt log*
 
 echo "*** Test: OK ***"
 
