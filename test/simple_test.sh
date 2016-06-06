@@ -14,7 +14,7 @@ fi
 cat linker.txt | wc > wc_linker
 
 # CHECK EQUALITY
-diff wc_counter ref_wc_counter
+diff wc_linker ref_wc_linker
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on diff linker"
   exit 1
