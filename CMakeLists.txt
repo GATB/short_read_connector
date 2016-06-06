@@ -5,9 +5,9 @@ cmake_minimum_required(VERSION 2.6)
 ################################################################################
 # The version number.
 ################################################################################
-SET (gatb-tool_VERSION_MAJOR 2)
-SET (gatb-tool_VERSION_MINOR 2)
-SET (gatb-tool_VERSION_PATCH 7)
+SET (gatb-tool_VERSION_MAJOR 1)
+SET (gatb-tool_VERSION_MINOR 0)
+SET (gatb-tool_VERSION_PATCH 0)
 
 IF (DEFINED MAJOR)
     SET (gatb-tool_VERSION_MAJOR ${MAJOR})
@@ -83,6 +83,8 @@ SET (CPACK_SOURCE_IGNORE_FILES
 )
 
 # For creating the BINARY package we include the files we want
+
+INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty                     DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc                            DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test                           DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts                        DESTINATION .)
