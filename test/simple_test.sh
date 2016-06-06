@@ -11,7 +11,7 @@ if [ $? -ne 0 ] ; then
   exit 1
 fi
 
-cat linker.txt | wc > wc_linker
+cat linker.txt | wc |  sed 's/^[ \t]*//;s/[ \t]*$//' > wc_linker # sed for removing spaces at the beggin and at the end of the line
 
 # CHECK EQUALITY
 diff wc_linker ref_wc_linker
@@ -66,7 +66,7 @@ if [ $? -ne 0 ] ; then
   exit 1
 fi
 
-cat counter.txt | wc > wc_counter
+cat counter.txt | wc |  sed 's/^[ \t]*//;s/[ \t]*$//' > wc_counter  # sed for removing spaces at the beggin and at the end of the line
 
 # CHECK EQUALITY
 diff wc_counter ref_wc_counter
