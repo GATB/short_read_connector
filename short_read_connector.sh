@@ -1,6 +1,7 @@
 #!/bin/bash
 
-version="1.1.1"
+version="1.0.0"
+
 
 
 EDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -13,6 +14,15 @@ fi
 dsk_bin=$EDIR/thirdparty/dsk/bin/macosx/dsk
 if [[ $platform == 'linux' ]]; then
        dsk_bin=$EDIR/thirdparty/dsk/bin/linux/dsk
+fi
+chmod a+x ${dsk_bin}
+
+
+#BIN DIR:
+if [ -d "$EDIR/build/" ] ; then # VERSION SOURCE COMPILED
+       BIN_DIR=$EDIR/build/bin
+else # VERSION BINARY
+       BIN_DIR=$EDIR/bin
 fi
 
 
@@ -186,14 +196,14 @@ fi
 # SRC_LINKER_RAM
 if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
-    	cmd="$EDIR/build/bin/SRC_linker_ram"
+    	cmd="${BIN_DIR}/SRC_linker_ram"
     else
 		# SRC_COUNTER
-       	cmd="$EDIR/build/bin/SRC_counter"
+       	cmd="${BIN_DIR}/SRC_counter"
        fi
 else
 	# SRC_LINKER_DISK
-	cmd="$EDIR/build/bin/SRC_linker_disk"
+	cmd="${BIN_DIR}/SRC_linker_disk"
 fi
 
 # adding options

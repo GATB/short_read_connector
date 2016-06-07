@@ -84,7 +84,10 @@ SET (CPACK_SOURCE_IGNORE_FILES
 
 # For creating the BINARY package we include the files we want
 
-INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty                     DESTINATION .)
+INSTALL (FILES ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dsk/bin/macosx/dsk      DESTINATION ./thirdparty/dsk/bin/macosx/)
+INSTALL (FILES ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dsk/bin/linux/dsk       DESTINATION ./thirdparty/dsk/bin/linux/)
+INSTALL (FILES ${CMAKE_CURRENT_SOURCE_DIR}/data/c1.fasta.gz                   DESTINATION ./data/)
+INSTALL (FILES ${CMAKE_CURRENT_SOURCE_DIR}/data/c2.fasta.gz                   DESTINATION ./data/)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc                            DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test                           DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts                        DESTINATION .)
