@@ -288,7 +288,7 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores){
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
-	string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n");
+	string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")-kmer_span query percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n");
 	fwrite((message).c_str(), sizeof(char), message.size(), pFile);
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
