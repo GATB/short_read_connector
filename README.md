@@ -59,6 +59,7 @@ Calling SRC_linker between read sets *bank* and *query*:
 ## Output Format
 ### Short reads counter
 Command:
+
 	 sh short_read_connector.sh -b data/c1.fasta.gz -q data/c2.fasta.gz -c
 
 Two first lines of the output file: 
@@ -74,9 +75,11 @@ The second line can be decomposed as:
 
 ### Short reads linker
 Command:
+
 	 sh short_read_connector.sh -b data/c1.fasta.gz -q data/c2.fasta.gz 
 
 Two first lines of the output file: 
+
 	 #query_read_id [target_read_id-kmer_span (k=31)-kmer_span query percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)
 	 1:676-93-93.000000 809-89-89.000000
 The first line is the file header. 
