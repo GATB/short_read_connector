@@ -63,6 +63,7 @@ Command:
 	 sh short_read_connector.sh -b data/c1.fasta.gz -q data/c2.fasta.gz -c
 
 Two first lines of the output file: 
+
 	 #query_read_id mean median min max number of shared 31mers with banq read set data/c2.fasta.gz
 	 0 3.614286 4 2 5
 The first line is the file header. 
