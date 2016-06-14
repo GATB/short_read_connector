@@ -302,7 +302,7 @@ public:
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
 		for (auto &matched_read:similar_read_ids_position_count){
             float percentage_span_kmer = 100*std::get<1>(matched_read.second)/float(seq.getDataSize());
-			if (percentage_span_kmer >= threshold*(seq.getDataSize())/float(100)) {
+			if (percentage_span_kmer >= threshold) {
 				if (not read_id_printed){
 					read_id_printed=true;
                     //					synchro->lock();
