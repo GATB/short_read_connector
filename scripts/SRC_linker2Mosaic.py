@@ -52,7 +52,6 @@ def convert_SRC_linker_output(headers, threshold, remove_similar_reads, SRC_link
             continue
         line=line.rstrip()
         query_read_id=int(line.split(':')[0])
-        query_read_size = sizes[query_read_id]
         targets=line.split(':')[1].split(' ')
         for target in targets:
             target_read_id=int(target.split('-')[0])
