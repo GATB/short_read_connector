@@ -251,6 +251,7 @@ void SRC_counter::execute (){
 	getInfo()->add (1, "input");
 	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
 	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+    getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
 	getInfo()->add (2, "Threshold size",  "%d",  threshold);

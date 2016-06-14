@@ -38,7 +38,7 @@ def sequence_sizes(bank_file_name):
     return sizes
             
 
-def convert_SRC_linker_output(headers, sizes, k, threshold, remove_similar_reads, SRC_linker_output_file_name):
+def convert_SRC_linker_output(headers, threshold, remove_similar_reads, SRC_linker_output_file_name):
     print "qseqid\tsseqid\tevalue\tpident"
     if "gz" in SRC_linker_output_file_name:
         sequencefile=gzip.open(SRC_linker_output_file_name,"r")
@@ -52,32 +52,34 @@ def convert_SRC_linker_output(headers, sizes, k, threshold, remove_similar_reads
             continue
         line=line.rstrip()
         query_read_id=int(line.split(':')[0])
+        query_read_size = sizes[query_read_id]
         targets=line.split(':')[1].split(' ')
         for target in targets:
             target_read_id=int(target.split('-')[0])
             if remove_similar_reads and target_read_id == query_read_id: continue
-            coverage = target.split('-')[1]
-            if int(coverage)<threshold: continue
-            print headers[query_read_id]+"\t"+headers[target_read_id]+"\t0.0\t"+(coverage)
+            coverage = int(target.split('-')[1])
+            ratio = float(target.split('-')[2])
+            if ratio<threshold: continue
+            print headers[query_read_id]+"\t"+headers[target_read_id]+"\t0.0\t"+str(ratio)#, str(query_read_size), str(sizes[target_read_id])
     
     
-if len(sys.argv)<5 or len(sys.argv)>6:
+if len(sys.argv)<4 or len(sys.argv)>5:
     print "USAGE"
     print " Used to transform the SRC_linker output into a format usable by mosaic finder"
     print " This tool must not be used when SRC_linker was used to compare two distinct read sets but only when SRC_linker was used to compare a read set against itself"
     print " For other needs, contact pierre.peterlongo@inria.fr"
     print "COMMAND"
-    print  sys.argv[0],"<banq file (fasta format, each sequence on ONE line, gzipped or not)> <SRC_linker output file> <kmer size (used by SRC_linker)> <threshold: bellow this percentage, alignements whose coverage ratio is lower are not output> <optional 'R': if present similarity between read and itself are removed>"
+    print  sys.argv[0],"<banq file (fasta format, each sequence on ONE line, gzipped or not)> <SRC_linker output file> <threshold: bellow this percentage, alignements whose coverage ratio is lower are not output> <optional 'R': if present similarity between read and itself are removed>"
     sys.exit(1)
 headers=index_headers(sys.argv[1])
-sizes=sequence_sizes(sys.argv[1])
-k=int(sys.argv[3]) # USELESS, TO REMOVE. 
-threshold=int(sys.argv[4])
+# sizes=sequence_sizes(sys.argv[1])
+# k=int(sys.argv[3]) 
+threshold=int(sys.argv[3])
 remove_similar_reads = False
-if len(sys.argv) == 6: 
-    if sys.argv[5]=='R': 
+if len(sys.argv) == 5: 
+    if sys.argv[4]=='R': 
         remove_similar_reads = True
 
 
-convert_SRC_linker_output(headers,sizes,k, threshold, remove_similar_reads, sys.argv[2])
+convert_SRC_linker_output(headers, threshold, remove_similar_reads, sys.argv[2])
 

@@ -22,10 +22,7 @@ def filter(file_name, threshold):
         # the total size of aligned sequence aligned=(float(tab_line[3])*float(tab_line[4]))
         aligned=(float(tab_line[3])*float(tab_line[4]))
         # divided by
-        # the smaller sequence min(tab_line[5]),(tab_line[6])
-        min_sequences=min(int(tab_line[5]),int(tab_line[6]))
-        # < percentage threshold
-        ratio = aligned/float(min_sequences)
+        ratio = aligned/float(tab_line[5])
         if  ratio <threshold: continue
         print tab_line[0]+'\t'+tab_line[1]+'\t'+tab_line[2]+'\t'+str(ratio)
     
