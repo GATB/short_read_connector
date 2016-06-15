@@ -1,3 +1,10 @@
+| **Linux** | **Mac OSX** |
+|-----------|-------------|
+[![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/) | [![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/)
+
+[![License](http://img.shields.io/:license-affero-blue.svg)](http://www.gnu.org/licenses/agpl-3.0.en.html)
+
+
 # What is Short Read Connector (SRC)?
 Short read connector enables the comparisons of two read sets *B* and *Q*. For each read from *Q* it provides either:
  * The number of occurrences of each *k*-mers of the read in the set *B* (SRC_counter)
