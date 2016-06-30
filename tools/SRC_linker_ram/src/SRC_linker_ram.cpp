@@ -30,7 +30,7 @@ SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
 }
 
 
-void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size){
+void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores){
 	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
@@ -46,7 +46,7 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size){
 		exit(0);
 	}
 	IteratorKmerH5Wrapper iteratorOnKmers (solidKmers.iterator());
-	quasiDico = quasidictionaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, gamma_value);
+	quasiDico = quasidictionaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t> (nbSolidKmers, iteratorOnKmers, fingerprint_size, nbCores, gamma_value);
 }
 
 
@@ -314,7 +314,7 @@ void SRC_linker_ram::execute (){
 	//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
 	//		fingerprint_size=0;
 	cout<<"fingerprint = "<<fingerprint_size<<endl;
-	create_quasi_dictionary(fingerprint_size);
+	create_quasi_dictionary(fingerprint_size, nbCores);
 	fill_quasi_dictionary(nbCores);
 
 	int threshold = getInput()->getInt(STR_THRESHOLD);

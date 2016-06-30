@@ -54,7 +54,7 @@ public:
     // Actual job done by the tool is here
     void execute ();
 
-    void create_quasi_dictionary(int fingerprint_size);
+    void create_quasi_dictionary(int fingerprint_size, int nbCores);
 
     void fill_quasi_dictionary(const int nbCores);
 
