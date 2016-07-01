@@ -5,7 +5,7 @@
 ##########################################################
 
 # RUN SRC
-(bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -p linker) > log_linker 2> log_linker_err
+(bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -p linker) > log_linker 2> log_linker_err
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on linker"
   exit 1
@@ -60,7 +60,7 @@ echo "*** DIFF LINKER OK ***"
 ##########################################################
 
 # RUN SRC
-bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -c -p counter -t 1 > log_counter 2>log_counter_err
+bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -c -p counter -t 1 > log_counter 2>log_counter_err
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on counter ***"
   exit 1
