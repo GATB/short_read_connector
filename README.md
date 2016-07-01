@@ -43,7 +43,7 @@ Binary release for Linux and Mac OSX are provided within the "Releases" tab on G
 
 Run a simple test looking for reads from data/c2.fasta.gz that share at least 20 kmers (k=25) with data/c1.fasta.gz. Kmers indexed from data/c1.fasta.gz are those occurring at least 2 times. 
 
-	 sh short_read_connector.sh -b data/c1.fasta.gz -q data/c2.fasta.gz 
+	 sh short_read_connector.sh -b data/c1.fasta.gz -q data/fof.txt 
 
 
 # Usage
