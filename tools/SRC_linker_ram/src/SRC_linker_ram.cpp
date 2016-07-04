@@ -59,10 +59,10 @@ bool correct(Sequence& seq){
 	const char* data = seq.getDataBuffer();
 	int DUSTSCORE[64]={0}; // all tri-nucleotides
 
-	size_t lenseq =seq.getDataSize();
 	if (data[0]!='A' && data[0]!='C' && data[0]!='G' && data[0]!='T')  { return false; }
 	if (data[1]!='A' && data[1]!='C' && data[1]!='G' && data[1]!='T')  { return false; }
-
+    
+	size_t lenseq =seq.getDataSize();
 	for (int j=2; j<lenseq; ++j){
 		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
 		if (data[j]!='A' && data[j]!='C' && data[j]!='G' && data[j]!='T')  { return false; }
@@ -88,6 +88,7 @@ struct FunctorIndexer{
 
 	void operator() (Sequence& seq){
 		if(not correct(seq)){return;}
+        if (kmer_size>seq.getDataSize()){return;} //BUG HERE WE SHOULD NOT NEED THIS LINE.
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
@@ -232,12 +233,16 @@ public:
     
 	void operator() (Sequence& seq){
 		if(not correct(seq)){return;}
+        if (model.getKmerSize()>seq.getDataSize()){return;} //BUG HERE WE SHOULD NOT NEED THIS LINE. SEE 'DEBRELATED' outputs
+        // || model.getKmerSize()>seq.getDataSize()
 		bool exists;
 		associated_read_ids={}; // list of the ids of reads from the bank where a kmer occurs
  		similar_read_ids_position_count={}; // tmp list of couples <last used position, kmer spanning>
 		itKmer->setData (seq.getData());
+        if (model.getKmerSize()>seq.getDataSize())            cout<<seq.getData().getBuffer()<<"--"<<endl; //DEBRELATED
 		u_int i=0; // position on the read
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
+            if (model.getKmerSize()>seq.getDataSize()) cout<<i<<" "<<seq.getDataSize()<<" "<<model.getKmerSize()<<" "<<seq.toString()<<" "<<model.toString((*itKmer)->value())<<endl; //DEBRELATED
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 			if(!exists) {++i;continue;}
 			for(auto &read_id: associated_read_ids){
