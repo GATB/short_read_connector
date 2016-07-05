@@ -305,12 +305,9 @@ public:
 			if (percentage_span_kmer >= threshold) {
 				if (not read_id_printed){
 					read_id_printed=true;
-                    //					synchro->lock();
 					toPrint=to_string(seq.getIndex()+1)+":";
-                    //					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
 				toPrint+=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+"-"+to_string(float(percentage_span_kmer))+" ";
-                //				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			}
             
 		}
@@ -326,19 +323,33 @@ public:
 
 
 void SRC_linker_disk::parse_query_sequences (int threshold, const int nbCores){
-	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
+    
+    BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
+    const std::vector<IBank*>& banks_of_queries = banks.getBanks();
+    const int number_of_read_sets = banks_of_queries.size();
+    
+    
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * outFile;
 	outFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
-	string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")-kmer_span query percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n");
-	fwrite((message).c_str(), sizeof(char), message.size(), outFile);
-	LOCAL (bank);
-	ProgressIterator<Sequence> itSeq (*bank);
-	ISynchronizer* synchro = System::thread().newSynchronizer();
-	Dispatcher dispatcher (nbCores, 1000);
-	dispatcher.iterate (itSeq, FunctorQuery(synchro,outFile, kmer_size,&quasiDico, threshold));
+    string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")-kmer_span query percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n");
+    fwrite((message).c_str(), sizeof(char), message.size(), outFile);
+    
+    for( int bank_id=0;bank_id<number_of_read_sets;bank_id++){ // iterate each bank
+        
+        string message("#Query read set number "+to_string(bank_id)+"\n");
+        fwrite((message).c_str(), sizeof(char), message.size(), outFile);
+        
+        IBank* bank=banks_of_queries[bank_id];
+        LOCAL (bank);
+        string progressMessage("Querying read set number "+to_string(bank_id));
+        ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
+        ISynchronizer* synchro = System::thread().newSynchronizer();
+        Dispatcher dispatcher (nbCores, 1000);
+        dispatcher.iterate (itSeq, FunctorQuery(synchro,outFile, kmer_size,&quasiDico, threshold));
+        delete synchro;
+    }
 	fclose (pFile);
-	delete synchro;
 }
 
 

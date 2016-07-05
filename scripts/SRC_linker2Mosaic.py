@@ -13,10 +13,10 @@ def index_headers(bank_file_name):
     for line in sequencefile.readlines():
         if line[0]=='>':
             # print line[1:],
-            headers.append(line.rstrip()[1:])            #
+            headers.append(line.rstrip()[1:].split()[0])            #
+            # print line.rstrip()[1:].split()[0]
             # print i
             # print line[1:],
-            # print headers[i]
             # i+=1
     return headers
     

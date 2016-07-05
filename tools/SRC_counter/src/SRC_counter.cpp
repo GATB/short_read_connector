@@ -212,20 +212,30 @@ public:
 
 
 void SRC_counter::parse_query_sequences (int threshold, const int nbCores){
-	IBank* bank = Bank::open (getInput()->getStr(STR_URI_QUERY_INPUT));
-	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
+    
+    BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
+    const std::vector<IBank*>& banks_of_queries = banks.getBanks();
+    const int number_of_read_sets = banks_of_queries.size();
+    
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
-	string message("#query_read_id mean median min max number of shared "+to_string(kmer_size)+"mers with banq read set\n");
-	fwrite((message).c_str(), sizeof(char), message.size(), pFile);
-
-	LOCAL (bank);
-	ProgressIterator<Sequence> itSeq (*bank);
-	ISynchronizer* synchro = System::thread().newSynchronizer();
-	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold));
-	fclose (pFile);
-	delete synchro;
+    
+    
+	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
+    for( int bank_id=0;bank_id<number_of_read_sets;bank_id++){ // iterate each bank
+        
+        IBank* bank=banks_of_queries[bank_id];
+        LOCAL (bank);
+        string message("#query_read_id (from bank "+bank->getId()+") mean median min max number of shared "+to_string(kmer_size)+"mers with banq "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
+        fwrite((message).c_str(), sizeof(char), message.size(), pFile);
+        string progressMessage("Querying read set "+bank->getId());
+        ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
+        ISynchronizer* synchro = System::thread().newSynchronizer();
+        Dispatcher dispatcher (nbCores, 10000);
+        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold));
+        delete synchro;
+    }
+    fclose (pFile);
 }
 
 
