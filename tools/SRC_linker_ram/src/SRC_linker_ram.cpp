@@ -63,7 +63,7 @@ struct FunctorIndexer{
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
         
-        if(repeated_kmers(model, itKmer)){return;}
+//        if(repeated_kmers(model, itKmer)){return;}
 		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex()+1);
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
@@ -127,7 +127,7 @@ public:
  		similar_read_ids_position_count={}; // tmp list of couples <last used position, kmer spanning>
 		itKmer->setData (seq.getData());
 		
-        if(repeated_kmers(model, *itKmer)){return;}
+//        if(repeated_kmers(model, *itKmer)){return;}
         u_int i=0; // position on the read
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
