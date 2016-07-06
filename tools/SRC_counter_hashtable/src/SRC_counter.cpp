@@ -86,36 +86,6 @@ void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const 
 
 }
 
-
-static int NT2int(char nt){
-	return (nt>>1)&3;
-}
-
-
-bool correct(Sequence& seq){
-	const char* data = seq.getDataBuffer();
-	int DUSTSCORE[64]={0}; // all tri-nucleotides
-
-	size_t lenseq =seq.getDataSize();
-	if (data[0]!='A' && data[0]!='C' && data[0]!='G' && data[0]!='T')  { return false; }
-	if (data[1]!='A' && data[1]!='C' && data[1]!='G' && data[1]!='T')  { return false; }
-
-	for (int j=2; j<lenseq; ++j){
-		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
-		if (data[j]!='A' && data[j]!='C' && data[j]!='G' && data[j]!='T')  { return false; }
-	}
-	int m,s=0;
-
-	for (int i=0; i<64; ++i)
-	{
-		m = DUSTSCORE[i];
-		s  += (m*(m-1))/2;
-	}
-
-	return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
-}
-
-
 //iterator->item().abundance
 //		iterator->item().value.getVal()
 
@@ -192,7 +162,7 @@ public:
 	}
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
+		if(not valid_sequence(seq, kmer_size)){return;}
 
 		bool exists;
 		unsigned char count;

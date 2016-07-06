@@ -30,33 +30,6 @@ SRC_linker_disk::SRC_linker_disk ()  : Tool ("SRC_linker_disk"){
 }
 
 
-static int NT2int(char nt){return (nt>>1)&3;}
-
-
-bool correct(Sequence& seq){
-	const char* data = seq.getDataBuffer();
-	int DUSTSCORE[64]={0}; // all tri-nucleotides
-
-	size_t lenseq =seq.getDataSize();
-	if (data[0]!='A' && data[0]!='C' && data[0]!='G' && data[0]!='T')  { return false; }
-	if (data[1]!='A' && data[1]!='C' && data[1]!='G' && data[1]!='T')  { return false; }
-
-	for (int j=2; j<lenseq; ++j){
-		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
-		if (data[j]!='A' && data[j]!='C' && data[j]!='G' && data[j]!='T')  { return false; }
-	}
-	int m,s=0;
-
-	for (int i=0; i<64; ++i)
-	{
-		m = DUSTSCORE[i];
-		s  += (m*(m-1))/2;
-	}
-
-	return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
-}
-
-
 struct FunctorCount{
 	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, uint64_t > &quasiDico;
 	int kmer_size;
@@ -64,10 +37,12 @@ struct FunctorCount{
 	FunctorCount(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, uint64_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
+		if(not valid_sequence(seq, kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);//TODO we can do better than create this each time
+        
 		itKmer.setData (seq.getData());
+        
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			uint64_t count;
 			bool exists;
@@ -158,7 +133,7 @@ struct FunctorIndexer{
 	}
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
+		if(not valid_sequence(seq, kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
@@ -245,7 +220,7 @@ public:
 
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
+		if(not valid_sequence(seq, kmer_size)){return;}
 		bool exists;
 		associated_read_ids={};
  		similar_read_ids_position_count={};

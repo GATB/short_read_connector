@@ -50,35 +50,6 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores)
 }
 
 
-static int NT2int(char nt){
-	return (nt>>1)&3;
-}
-
-
-bool correct(Sequence& seq){
-	const char* data = seq.getDataBuffer();
-	int DUSTSCORE[64]={0}; // all tri-nucleotides
-
-	if (data[0]!='A' && data[0]!='C' && data[0]!='G' && data[0]!='T')  { return false; }
-	if (data[1]!='A' && data[1]!='C' && data[1]!='G' && data[1]!='T')  { return false; }
-    
-	size_t lenseq =seq.getDataSize();
-	for (int j=2; j<lenseq; ++j){
-		++DUSTSCORE[NT2int(data[j-2])*16 + NT2int(data[j-1])*4 + NT2int(data[j])];
-		if (data[j]!='A' && data[j]!='C' && data[j]!='G' && data[j]!='T')  { return false; }
-	}
-	int m,s=0;
-
-	for (int i=0; i<64; ++i)
-	{
-		m = DUSTSCORE[i];
-		s  += (m*(m-1))/2;
-	}
-
-	return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
-}
-
-
 struct FunctorIndexer{
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
@@ -87,11 +58,12 @@ struct FunctorIndexer{
 	}
 
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
-        if (kmer_size>seq.getDataSize()){return;} //BUG HERE WE SHOULD NOT NEED THIS LINE.
+		if(not valid_sequence(seq,kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
+        
+        if(repeated_kmers(model, itKmer)){return;}
 		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex()+1);
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
@@ -110,89 +82,6 @@ void SRC_linker_ram::fill_quasi_dictionary (const int nbCores){
 	Dispatcher dispatcher (nbCores, 10000);
 	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size));
 }
-
-
-//class FunctorQueryNbKmers // FunctorQuery used during PSC submission : kn non overlapping kmers
-//{
-//public:
-//	ISynchronizer* synchro;
-//	FILE* outFile;
-//	int kmer_size;
-//	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
-//	int threshold;
-//	vector<u_int32_t> associated_read_ids;
-//	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
-//	Kmer<KMER_SPAN(1)>::ModelCanonical model;
-//	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
-//
-//	FunctorQueryNbKmers(const FunctorQueryNbKmers& lol)
-//	{
-//		synchro=lol.synchro;
-//		outFile=lol.outFile;
-//		kmer_size=lol.kmer_size;
-//		quasiDico=lol.quasiDico;
-//		threshold=lol.threshold;
-//		associated_read_ids=lol.associated_read_ids;
-//		similar_read_ids_position_count=lol.similar_read_ids_position_count;
-//		model=lol.model;
-//		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
-//	}
-//
-//	FunctorQueryNbKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
-//	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
-//		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
-//		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
-//	}
-//
-//	~FunctorQueryNbKmers () {
-//	}
-//
-//	void operator() (Sequence& seq){
-//		if(not correct(seq)){return;}
-//		bool exists;
-//		associated_read_ids={}; // list of the ids of reads from the bank where a kmer occurs
-// 		similar_read_ids_position_count={}; // tmp list of couples <next free position, count>
-//		itKmer->setData (seq.getData());
-//		u_int i=0; // position on the read
-//		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
-//			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
-//			if(!exists) {++i;continue;}
-//			for(auto &read_id: associated_read_ids){
-//				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
-//				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
-//					similar_read_ids_position_count[read_id]=std::make_pair(i+kmer_size, 1);
-//				}else{  // a kmer is already shared with this read
-//					std::pair <int,int> viablepos_nbshared = (element->second);
-//					if(i>=viablepos_nbshared.first){ // the current position does not overlap the previous shared kmer
-//						viablepos_nbshared.first = i+kmer_size; // next non overlapping position
-//						viablepos_nbshared.second = viablepos_nbshared.second+1; // a new kmer shared.
-//						similar_read_ids_position_count[read_id] = viablepos_nbshared;
-//					}
-//				}
-//			}
-//			++i;
-//		}
-//		string toPrint;
-//		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
-//		for (auto &matched_read:similar_read_ids_position_count){
-//			if (std::get<1>(matched_read.second) > threshold) {
-//				if (not read_id_printed){
-//					read_id_printed=true;
-//					synchro->lock();
-//					toPrint=to_string(seq.getIndex()+1)+":";
-//					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
-//				}
-//				toPrint=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+" ";
-//				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
-//			}
-//		}
-//		if(read_id_printed){
-//			fwrite("\n", sizeof(char), 1, outFile);
-//			synchro->unlock ();
-//		}
-//	}
-//};
-
 
 
 
@@ -232,17 +121,15 @@ public:
 	}
     
 	void operator() (Sequence& seq){
-		if(not correct(seq)){return;}
-        if (model.getKmerSize()>seq.getDataSize()){return;} //BUG HERE WE SHOULD NOT NEED THIS LINE. SEE 'DEBRELATED' outputs
-        // || model.getKmerSize()>seq.getDataSize()
+		if(not valid_sequence(seq, kmer_size)){return;}
 		bool exists;
 		associated_read_ids={}; // list of the ids of reads from the bank where a kmer occurs
  		similar_read_ids_position_count={}; // tmp list of couples <last used position, kmer spanning>
 		itKmer->setData (seq.getData());
-        if (model.getKmerSize()>seq.getDataSize())            cout<<seq.getData().getBuffer()<<"--"<<endl; //DEBRELATED
-		u_int i=0; // position on the read
+		
+        if(repeated_kmers(model, *itKmer)){return;}
+        u_int i=0; // position on the read
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
-            if (model.getKmerSize()>seq.getDataSize()) cout<<i<<" "<<seq.getDataSize()<<" "<<model.getKmerSize()<<" "<<seq.toString()<<" "<<model.toString((*itKmer)->value())<<endl; //DEBRELATED
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 			if(!exists) {++i;continue;}
 			for(auto &read_id: associated_read_ids){

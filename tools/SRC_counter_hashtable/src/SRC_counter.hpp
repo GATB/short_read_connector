@@ -26,6 +26,7 @@
 
 #include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionary/src/quasidictionary.h"
+#include "common.hpp"
 /********************************************************************************/
 
 
