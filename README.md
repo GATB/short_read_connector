@@ -43,8 +43,6 @@ Binary release for Linux and Mac OSX are provided within the "Releases" tab on G
 Run a simple test looking for reads from data/c2.fasta.gz that share at least 20 kmers (k=25) with data/c1.fasta.gz. Kmers indexed from data/c1.fasta.gz are those occurring at least 2 times. 
 
 	 sh short_read_connector.sh -b data/c1.fasta.gz -q data/fof.txt
-     
-     TODO: explain the FOF concept
 
 
 # Usage
@@ -98,8 +96,8 @@ The second line can be decomposed as:
    * 676-93-93.000000: a target read and its peaces of information:
    	* 676: id of the targeted read
    	* 93: kmer-span (number of position of read 1 that is covered by at least a solid kmer present in read 676)
-   	* 93.000000: ration of kmer-span wrt to read 1 length (here 100)
-   * 809-89-89.000000: a second targeted read and its peaces of information (and so on)
+   	* 93.000000: kmer-span ratio wrt to read 1 length (here 100)
+   * 809-89-89.000000: a second targeted read and its pieces of information (and so on)
    
    
 ## Input read sets
