@@ -71,15 +71,15 @@ Command:
 
 Two first lines of the output file: 
 
-	 #query_read_id mean median min max number of shared 31mers with banq read set data/c2.fasta.gz
+	 #query_read_id mean median min max number of shared 31mers with banq read set data/c1.fasta.gz
 	 0 3.614286 4 2 5
 The first line is the file header. 
 The second line can be decomposed as:
-   * 0: id of the query read
-   * 3.614286: mean number of occurrences of its k-mers (here with k=31) in the read set *data/c2.fasta.gz*
-   * 4: median number of occurrences of its k-mers (here with k=31) in the read set *data/c2.fasta.gz*
-   * 2: minimal number of occurrences of at least a kmer from read 0 in the read set *data/c2.fasta.gz*
-   * 5: maximal number of occurrences of at least a kmer from read 0 in the read set *data/c2.fasta.gz*
+   * 0: id of the query read (from read set contained in fof.txt)
+   * 3.614286: mean number of occurrences of its k-mers (here with k=31) in the read set *data/c1.fasta.gz*
+   * 4: median number of occurrences of its k-mers (here with k=31) in the read set *data/c1.fasta.gz*
+   * 2: minimal number of occurrences of at least a kmer from read 0 in the read set *data/c1.fasta.gz*
+   * 5: maximal number of occurrences of at least a kmer from read 0 in the read set *data/c1fasta.gz*
 
 ### Short reads linker
 Command:
