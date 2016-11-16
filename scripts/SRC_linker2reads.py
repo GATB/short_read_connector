@@ -69,7 +69,7 @@ def convert_SRC_linker_output(read_offsets, remove_similar_reads, SRC_linker_out
         
     
     
-    #31:1246-30 479-63 1043-53 820-83 
+    #787:787-4064-100.000000 718-3956-97.342522 
     
     for line in srcfile.readlines():
         if line[0]=='#': #header
@@ -79,7 +79,8 @@ def convert_SRC_linker_output(read_offsets, remove_similar_reads, SRC_linker_out
         targets=line.split(':')[1].split(' ')
         for target in targets:
             target_read_id=int(target.split('-')[0])-1 # -1 as the read ids are 1 based in SRC
-            target_read_similarity=int(target.split('-')[1])
+            target_read_kmer_covers = int(target.split('-')[1])
+            target_read_similarity=round(float(target.split('-')[2]),2)
             if remove_similar_reads and target_read_id == query_read_id: continue
             #print line
             print "################################ NEW COUPLE ("+str(query_read_id)+"/"+str(target_read_id)+":"+str(target_read_similarity)+" percent similarity)+##############################"
