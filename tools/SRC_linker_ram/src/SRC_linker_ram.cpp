@@ -12,6 +12,7 @@ static const char* STR_URI_BANK_INPUT = "-bank";
 static const char* STR_URI_QUERY_INPUT = "-query";
 static const char* STR_FINGERPRINT = "-fingerprint_size";
 static const char* STR_GAMMA = "-gamma";
+static const char* STR_WINDOWS_SIZE = "-windows_size";
 static const char* STR_THRESHOLD = "-kmer_threshold";
 static const char* STR_OUT_FILE = "-out";
 static const char* STR_CORE = "-core";
@@ -23,8 +24,9 @@ SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
 	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
-	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal percentage of shared kmer span for considering 2 reads as similar. The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%.",    false, "75"));
-	getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
+	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.",    false, "75"));
+	getParser()->push_back (new OptionOneParam (STR_WINDOWS_SIZE, "size of the window. If the windows size is zero (default value), then the full read is considered",    false, "0"));
+    getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
 	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
 }
@@ -92,9 +94,10 @@ public:
 	FILE* outFile;
 	int kmer_size;
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
-	int threshold;
+    int threshold;
+    int windows_size;
 	vector<u_int32_t> associated_read_ids;
-	std::unordered_map<u_int32_t, std::pair <u_int,u_int>> similar_read_ids_position_count; // each bank read id --> couple<next viable position (without overlap), number of shared kmers>
+	std::unordered_map<u_int32_t, vector<bool>> similar_read_ids_position; // each read id --> vector of positions covered by a shared kmer
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
     
@@ -103,16 +106,17 @@ public:
 		synchro=lol.synchro;
 		outFile=lol.outFile;
 		kmer_size=lol.kmer_size;
+        windows_size = lol.windows_size;
 		quasiDico=lol.quasiDico;
 		threshold=lol.threshold;
 		associated_read_ids=lol.associated_read_ids;
-		similar_read_ids_position_count=lol.similar_read_ids_position_count;
+		similar_read_ids_position=lol.similar_read_ids_position;
 		model=lol.model;
 		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
     
-	FunctorQuerySpanKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
+	FunctorQuerySpanKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold, const int windows_size)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold), windows_size(windows_size){
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -121,10 +125,14 @@ public:
 	}
     
 	void operator() (Sequence& seq){
+        int used_windows_size=windows_size;
+        if (windows_size==0){ // if windows size == 0 then we use the full read length as windows
+            used_windows_size=seq.getDataSize();
+        }
 		if(not valid_sequence(seq, kmer_size)){return;}
 		bool exists;
 		associated_read_ids={}; // list of the ids of reads from the bank where a kmer occurs
- 		similar_read_ids_position_count={}; // tmp list of couples <last used position, kmer spanning>
+ 		similar_read_ids_position={}; // tmp list of couples <last used position, kmer spanning>
 		itKmer->setData (seq.getData());
 		
 //        if(repeated_kmers(model, *itKmer)){return;}
@@ -133,33 +141,55 @@ public:
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 			if(!exists) {++i;continue;}
 			for(auto &read_id: associated_read_ids){
-				std::unordered_map<u_int32_t, std::pair <u_int,u_int>>::const_iterator element = similar_read_ids_position_count.find(read_id);
-				if(element == similar_read_ids_position_count.end()) {// not inserted yet:
-					similar_read_ids_position_count[read_id]=std::make_pair(i, kmer_size);
-				}else{  // a kmer is already shared with this read
-					std::pair <int,int> lastpos_spankmer = (element->second);
-                    // update spanning, up to a kmer size
-                    if ((i-lastpos_spankmer.first)<kmer_size)   lastpos_spankmer.second += i-lastpos_spankmer.first;
-                    else                                        lastpos_spankmer.second += kmer_size;
-                    lastpos_spankmer.first=i;                                            // update last position of a shared kmer with this read
-                    similar_read_ids_position_count[read_id] = lastpos_spankmer;
-				}
-			}
-			++i;
+				std::unordered_map<u_int32_t, vector<bool>>::const_iterator element = similar_read_ids_position.find(read_id);
+                vector<bool> position_shared;
+				if(element == similar_read_ids_position.end()) {// not inserted yet create an empty vector
+                    position_shared = vector<bool>(seq.getDataSize());
+                    for (int pos=i;pos<seq.getDataSize();pos++) position_shared[pos]=false;
+                    
+                }
+                else{
+                    position_shared = element->second;
+                }
+                
+                
+//                cout<<"hohohoh "<<i<<" "<<seq.getDataSize()<<endl; //DEB
+                for (int pos=i;pos<i+kmer_size;pos++){
+                    if (pos>seq.getDataSize()) {
+//                        cout<<"ok !!"<<endl; //DEB
+                        break;
+                    }
+                    position_shared[pos]=true;
+                }
+                
+                
+//                int nbtrue = 0; //DEBUG
+//                for (int z=0;z<seq.getDataSize();z++) { //DEBUG
+//                    if (position_shared[z]) { //DEBUG
+//                        cout<<position_shared[z]<<" "; //DEBUG
+//                        nbtrue++; //DEBUG
+//                    }
+//                }
+//                cout<<" nb true "<<nbtrue<<endl; //DEBUG
+                
+                
+                similar_read_ids_position[read_id] = position_shared;
+                
+            }
+            ++i;
 		}
 		string toPrint;
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
-		for (auto &matched_read:similar_read_ids_position_count){
-            float percentage_span_kmer = 100*std::get<1>(matched_read.second)/float(seq.getDataSize());
+		for (auto &matched_read:similar_read_ids_position){
+            float percentage_span_kmer = 100*max_populated_window(matched_read.second,used_windows_size)/float(used_windows_size);
+            
 			if (percentage_span_kmer >= threshold) {
 				if (not read_id_printed){
 					read_id_printed=true;
 //					synchro->lock();
 					toPrint=to_string(seq.getIndex()+1)+":";
-//					fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 				}
-				toPrint+=to_string(matched_read.first)+"-"+to_string(std::get<1>(matched_read.second))+"-"+to_string(float(percentage_span_kmer))+" ";
-//				fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+				toPrint+=to_string(matched_read.first)+"-"+to_string(float(percentage_span_kmer))+" ";
 			}
             
 		}
@@ -171,11 +201,70 @@ public:
 			synchro->unlock ();
 		}
 	}
+private:
+    int max_populated_window(const vector<bool> populated, const int windows_size){
+        const int size_vector = populated.size();
+        const int last_excluded_starting_window_position = size_vector-windows_size+1;
+        int max = 0;
+        int number_populated=0;
+        
+        for(int i=0;i<windows_size;i++){
+            if (populated[i]) {
+                number_populated++;
+            }
+        }
+        max=number_populated;
+
+        for (int pos=1;pos<last_excluded_starting_window_position;pos+=1){
+            if (populated[pos-1]){number_populated--;}
+            if (populated[pos+windows_size-1]){number_populated++;}
+            if (number_populated>max) max=number_populated;
+        }
+//        cout<<max<<" "<<windows_size<<endl; //DEBUG
+        return max;
+    }
+    
+//    
+//    int max_start_or_end(const vector<bool> populated, const int windows_size){
+//        const int start = max_starting_populated_window(populated,windows_size);
+//        const int end = max_ending_populated_window(populated,windows_size);
+//        
+//        if (start>end) return start;
+//        return end;
+//        
+//    }
+//    
+//    int max_starting_populated_window(const vector<bool> populated, const int windows_size){
+//        int number_populated=0;
+//        
+//        for(int i=0;i<windows_size;i++){
+//            if (populated[i]) {
+//                number_populated++;
+//            }
+//        }
+//        return number_populated;
+//    }
+//    
+//    
+//    
+//    int max_ending_populated_window(const vector<bool> populated, const int windows_size){
+//        const int size_vector = populated.size();
+//        const int last_excluded_starting_window_position = size_vector-windows_size+1;
+//        int number_populated=0;
+//        
+//        for(int i=size_vector-windows_size;i<size_vector;i++){
+//            if (populated[i]) {
+//                number_populated++;
+//            }
+//        }
+//        return number_populated;
+//    }
+
 };
 
 
 
-void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores){
+void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, const int windows_size){
     BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
     const std::vector<IBank*>& banks_of_queries = banks.getBanks();
     const int number_of_read_sets = banks_of_queries.size();
@@ -199,7 +288,7 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores){
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 1000);
-        dispatcher.iterate (itSeq, FunctorQuerySpanKmers(synchro,outFile, kmer_size,&quasiDico, threshold));
+        dispatcher.iterate (itSeq, FunctorQuerySpanKmers(synchro,outFile, kmer_size,&quasiDico, threshold, windows_size));
         delete synchro;
     }
 	fclose (outFile);
@@ -238,7 +327,8 @@ void SRC_linker_ram::execute (){
 	fill_quasi_dictionary(nbCores);
 
 	int threshold = getInput()->getInt(STR_THRESHOLD);
-	parse_query_sequences(threshold, nbCores);
+    int windows_size = getInput()->getInt(STR_WINDOWS_SIZE);
+	parse_query_sequences(threshold, nbCores, windows_size);
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");

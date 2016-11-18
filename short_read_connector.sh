@@ -43,7 +43,9 @@ echo  "	-k value. Set the length of used kmers. Must fit the compiled value. Def
 echo  "	-f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12"
 echo  "	-G value. gamma value. MPHF expert users parameter - Default=2"
 echo  "	-a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
-echo  "	-s: Minimal percentage of shared kmer span for considering 2 reads as similar. The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. Default=75"
+echo  "	-s: Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved."
+
+echo  "	-w: windows size, default 0"
 echo  "	-t: number of thread used. Default=0"
 echo  "	-d:  use disk over RAM (slower and no impact with -c option)"
 echo  "	-c: use short_read_connector_counter (SRC_counter)"
@@ -63,11 +65,12 @@ prefix="short_read_connector_res"
 remove=1
 diskMode=0
 countMode=0
+windows_size=0
 
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts "hgb:q:p:k:a:s:t:f:G:dc" opt; do
+while getopts "hgb:q:p:k:a:s:t:f:G:w:dc" opt; do
 case $opt in
 
 h)
@@ -81,13 +84,19 @@ gamma=$OPTARG
 ;;
 
 d)
-echo "use disk mode"
+echo "use disk mode">&2
 diskMode=1
 ;;
 
+w)
+echo "use windows size: $OPTARG" >&2
+windows_size=$OPTARG
+;;
+
+
 c)
 
-echo "use SRC_counter"
+echo "use SRC_counter">&2
 countMode=1
 ;;
 
@@ -207,7 +216,7 @@ else
 fi
 
 # adding options
-cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}"
+cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma} -windows_size ${windows_size}"
 
 echo ${cmd}
 ${cmd}

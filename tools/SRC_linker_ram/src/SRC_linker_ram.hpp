@@ -59,7 +59,7 @@ public:
 
     void fill_quasi_dictionary(const int nbCores);
 
-    void parse_query_sequences(int threshold, const int nbCores);
+    void parse_query_sequences(int threshold, const int nbCores, const int windows_size);
 };
 
 /********************************************************************************/
