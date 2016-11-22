@@ -181,7 +181,8 @@ public:
 		string toPrint;
 		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
 		for (auto &matched_read:similar_read_ids_position){
-            float percentage_span_kmer = 100*max_populated_window(matched_read.second,used_windows_size)/float(used_windows_size);
+            const int mpw = max_populated_window(matched_read.second,used_windows_size);
+            const float percentage_span_kmer = 100*mpw/float(used_windows_size);
             
 			if (percentage_span_kmer >= threshold) {
 				if (not read_id_printed){
@@ -189,7 +190,7 @@ public:
 //					synchro->lock();
 					toPrint=to_string(seq.getIndex()+1)+":";
 				}
-				toPrint+=to_string(matched_read.first)+"-"+to_string(float(percentage_span_kmer))+" ";
+				toPrint+=to_string(matched_read.first)+"-"+to_string(mpw)+"-"+to_string(float(percentage_span_kmer))+" ";
 			}
             
 		}
@@ -333,7 +334,8 @@ void SRC_linker_ram::execute (){
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
 	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
-	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+    getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+    getInfo()->add (2, "windows_size size",  "%d",  windows_size);
     getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);

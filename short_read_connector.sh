@@ -211,13 +211,20 @@ if [ $diskMode -eq 0 ]; then
        	cmd="${BIN_DIR}/SRC_counter"
        fi
 else
+    echo "Disk version not maintained anymore - sorry"
+    exit 1;
+
 	# SRC_LINKER_DISK
-	cmd="${BIN_DIR}/SRC_linker_disk"
+#cmd="${BIN_DIR}/SRC_linker_disk"
 fi
 
 # adding options
-cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma} -windows_size ${windows_size}"
+cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}"
 
+# adding windows size option in the linker case
+if [ $countMode -eq 0 ]; then
+    cmd="${cmd} -windows_size ${windows_size}"
+fi
 echo ${cmd}
 ${cmd}
 if [ $? -ne 0 ]
