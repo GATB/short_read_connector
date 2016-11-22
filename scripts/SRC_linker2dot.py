@@ -64,10 +64,10 @@ def convert_SRC_linker_output(remove_similar_reads, SRC_linker_output_file_name,
             target_read_similarity=round(float(target.split('-')[1]),2)
             
             if remove_similar_reads: 
-                if target_read_id == query_read_id: continue
-
+                if target_read_id == query_read_id: continue                #
+                #
                 if prefixes[target_read_id] == prefixes[query_read_id]: continue
-                if suffixes[target_read_id ]== suffixes[query_read_id]: continue
+                if suffixes[target_read_id ]== suffixes[query_read_id]: continue          
                 if canonical.rev_comp(prefixes[target_read_id]) == suffixes[query_read_id]: continue
                 if canonical.rev_comp(suffixes[target_read_id]) == prefixes[query_read_id]: continue
             #print line
@@ -94,6 +94,6 @@ remove_similar_reads = False
 if len(sys.argv) == 4:
     if sys.argv[3]=='R': remove_similar_reads = True
 print ("digraph scr_linker_output{")
-prefixes,suffixes=print_nodes_and_index_prefix_and_suffix(read_bank,100)
+prefixes,suffixes=print_nodes_and_index_prefix_and_suffix(read_bank,90)
 convert_SRC_linker_output(remove_similar_reads, SRC_output, prefixes,suffixes)
 print ("}")
