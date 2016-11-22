@@ -1,0 +1,6 @@
+1.0.0: (jun 2016) 
+	initial release
+1.0.1: (nov 2016)
+	remove the -d option
+	add the -w option
+	update documentation accordingly
