@@ -56,7 +56,7 @@ TOOL_GIT_HOME="/scratchdir/builds/workspace/gatb-${TOOL_NAME}"
 GRM_PATH="${BUILD_DIR}/github-release-api"
 GRM_CMD="${GRM_PATH}/github_release_manager.sh"
 # github credentials and repository
-GITHUB_REPO=${TOOL_NAME}
+GITHUB_REPO="short_read_connector"
 GITHUB_OWNER=GATB
 GRM_CREDENTIALS="-l $GITHUB_ADMIN -t $GITHUB_TOKEN -o ${GITHUB_OWNER} -r ${GITHUB_REPO}"
 
