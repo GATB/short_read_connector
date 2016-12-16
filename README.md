@@ -9,7 +9,7 @@
 Short read connector enables the comparisons of two read sets *B* and *Q*. For each read from *Q* it provides either:
  * The number of occurrences of each *k*-mers of the read in the set *B* (SRC_counter)
  or
- * A list of reads from *B* that share enough *k*-mers with the tested read from *B* (SRC_linker)
+ * A list of reads from *B* that share enough *k*-mers with the (a window of) the tested read from *A* (SRC_linker)
  
 **Citation** Camille Marchet, Antoine Limasset, Lucie Bittner, Pierre Peterlongo. A resource-frugal probabilistic
 dictionary and applications in (meta)genomics. 2016. <hal-01322440>
@@ -57,10 +57,10 @@ Calling SRC_linker between read sets *bank* and *query*:
 	 -k value. Set the length of used kmers. Must fit the compiled value. Default=31
 	 -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12
 	 -G value. gamma value. MPHF expert users parameter - Default=2
-	 -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2
-	 -s: minimal number of kmer shared by two reads to be considered as similar. Default=3
+     -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2
+     -s: Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.)
+     -w: size of the window. If the windows size is zero (default value), then the full read is considered
 	 -t: number of thread used. Default=0
-	 -d: use disk over RAM (slower and no impact with -c option)
 	 -c: use short_read_connector_counter (SRC_counter)
 	 
 ## Output Format
