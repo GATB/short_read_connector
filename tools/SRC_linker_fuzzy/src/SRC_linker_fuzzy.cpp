@@ -190,7 +190,7 @@ public:
                 vector<bool> position_shared;
 				if(element == similar_read_ids_position.end()) {// not inserted yet create an empty vector
                     position_shared = vector<bool>(seq.getDataSize());
-                    for (int pos=0;pos<seq.getDataSize();pos++) position_shared[pos]=false; // WARNING CHECK IF IT ZERO OR position_on_read AND REPLACE IN OTHER VERSIONS IF NECESSARY
+                    for (int pos=0;pos<seq.getDataSize();pos++) position_shared[pos]=false;
                     
                 }
                 else{

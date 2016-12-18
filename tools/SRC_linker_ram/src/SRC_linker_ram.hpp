@@ -39,13 +39,14 @@
 
 class SRC_linker_ram : public Tool
 {
+
 	
-private:
+protected:
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
 	u_int64_t nbSolidKmers;
+    static const size_t span = KMER_SPAN(1);
     int gamma_value;
-	int kmer_size;
-	static const size_t span = KMER_SPAN(1);
+    int kmer_size;
 
 public:
 

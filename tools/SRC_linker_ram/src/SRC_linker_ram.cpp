@@ -145,7 +145,7 @@ public:
                 vector<bool> position_shared;
 				if(element == similar_read_ids_position.end()) {// not inserted yet create an empty vector
                     position_shared = vector<bool>(seq.getDataSize());
-                    for (int pos=i;pos<seq.getDataSize();pos++) position_shared[pos]=false;
+                    for (int pos=0;pos<seq.getDataSize();pos++) position_shared[pos]=false;
                     
                 }
                 else{
@@ -343,3 +343,16 @@ void SRC_linker_ram::execute (){
 	getInfo()->add (1, "output");
 	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
