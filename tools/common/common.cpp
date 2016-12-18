@@ -8,6 +8,8 @@
 
 #include "common.hpp"
 
+using namespace std;
+
 
 static int NT2int(char nt){
 	return (nt>>1)&3;
@@ -53,3 +55,65 @@ bool valid_sequence(Sequence& seq, const int kmer_size){
 	return s<((lenseq-2)/4 * (lenseq-6)/4)/2;
 }
 
+template<class T> T min(T a, T b, T c) {
+    return a < b ? std::min(a, c) : std::min(b, c);
+}
+
+size_t edit_distance(const string& A, const string& B)
+{
+    
+    
+        
+    
+    
+    // LINEAR MEMORY
+    
+    size_t NA = A.size();
+    size_t NB = B.size();
+    
+    vector<size_t> current(NB+1);
+    vector<size_t> previous(NB+1);
+    
+    for (size_t b = 0; b <= NB; ++b)
+        previous[b] = b;
+    
+    
+    for (size_t a = 1; a <= NA; ++a){
+        current[0]=a;
+        for (size_t b = 1; b <= NB; ++b){
+            size_t x = previous[b] + 1;
+            size_t y = current[b-1] + 1;
+            size_t z = previous[b-1] + (A[a-1] == B[b-1] ? 0 : 1);
+            current[b] = min(x,y,z);
+        }
+        previous.swap(current);
+    }
+    
+//    if(previous[NB]<2) cout<<A<<endl<<B<<endl<<previous[NB]<<endl;
+    return previous[NB];
+    
+//    
+//    
+//    
+//    
+//    
+//    vector<vector<size_t>> M(NA + 1, vector<size_t>(NB + 1));
+//    
+//    for (size_t a = 0; a <= NA; ++a)
+//        M[a][0] = a;
+//    
+//    for (size_t b = 0; b <= NB; ++b)
+//        M[0][b] = b;
+//    
+//    for (size_t a = 1; a <= NA; ++a)
+//        for (size_t b = 1; b <= NB; ++b)
+//        {
+//            size_t x = M[a-1][b] + 1;
+//            size_t y = M[a][b-1] + 1;
+//            size_t z = M[a-1][b-1] + (A[a-1] == B[b-1] ? 0 : 1);
+//            M[a][b] = min(x,y,z);
+//        }
+//    
+//
+//    return M[A.size()][B.size()];
+}

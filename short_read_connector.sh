@@ -49,6 +49,7 @@ echo  "	-w: windows size, default 0"
 echo  "	-t: number of thread used. Default=0"
 echo  "	-d:  use disk over RAM (slower and no impact with -c option)"
 echo  "	-c: use short_read_connector_counter (SRC_counter)"
+echo  "	-F: use short_read_connector_fuzzy (SRC_fuzzy)"
 }
 
 
@@ -65,12 +66,13 @@ prefix="short_read_connector_res"
 remove=1
 diskMode=0
 countMode=0
+fuzzyMode=0
 windows_size=0
 
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts "hgb:q:p:k:a:s:t:f:G:w:dc" opt; do
+while getopts "hgb:q:p:k:a:s:t:f:G:w:dcF" opt; do
 case $opt in
 
 h)
@@ -98,6 +100,12 @@ c)
 
 echo "use SRC_counter">&2
 countMode=1
+;;
+
+F)
+
+echo "use SRC_linker_fuzzy">&2
+fuzzyMode=1
 ;;
 
 f)
@@ -164,6 +172,14 @@ exit 1
 ;;
 esac
 done
+
+
+if [ $countMode -eq 1 ]; then 
+       if [ $fuzzyMode -eq 1 ]; then
+              echo "count and fuzzy mode not compatible yet - sorry"
+              exit 1
+       fi
+fi
 #######################################################################
 #################### END GET OPTIONS            #######################
 #######################################################################
@@ -202,12 +218,17 @@ fi
 # Compare read sets
 
 
+
+
 # SRC_LINKER_RAM
 if [ $diskMode -eq 0 ]; then
 	if [ $countMode -eq 0 ]; then
-    	cmd="${BIN_DIR}/SRC_linker_ram"
-    else
-		# SRC_COUNTER
+              if  [ $fuzzyMode -eq 1 ]; then
+                     cmd="${BIN_DIR}/SRC_linker_fuzzy"
+              else
+                     cmd="${BIN_DIR}/SRC_linker_ram"
+              fi
+       else # SRC_COUNTER
        	cmd="${BIN_DIR}/SRC_counter"
        fi
 else

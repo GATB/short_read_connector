@@ -62,6 +62,8 @@ Calling SRC_linker between read sets *bank* and *query*:
 	 -t: number of thread used. Default=0
 	 -d: use disk over RAM (slower and no impact with -c option)
 	 -c: use short_read_connector_counter (SRC_counter)
+     -F: use the fuzzy approach. A seed is now composed of 3 parts: a heart of size k, a left context of size -context_size (option available from the binary file) and a right context also of size -context size.  A match between such a seed and a query seed is obtained if the heart is exactly the same, and if the cumulated edit distance between query and ref of the left and right contexts is below a threshold (also defined in the binary options).
+         Not cumulable with the -c option.
 	 
 ## Output Format
 ### Short reads counter
