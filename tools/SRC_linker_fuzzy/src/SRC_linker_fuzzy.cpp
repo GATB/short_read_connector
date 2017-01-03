@@ -65,26 +65,52 @@ struct FunctorIndexer{
 	FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper,  pair<u_int32_t,string> >& quasiDico, int kmer_size, int context_size)  :  quasiDico(quasiDico), kmer_size(kmer_size), context_size(context_size) {
 	}
 
-	void operator() (Sequence& seq){
+    void operator() (Sequence& seq){
+        //    Kmer<KMER_SPAN(1)>::ModelCanonical model (6);
+        //    string seq="AATAGC";
+        ////    Kmer<KMER_SPAN(1)>::ModelCanonical::Kmer kmer = model.codeSeed ("AGCTAT", Data::ASCII);
+        //    Kmer<KMER_SPAN(1)>::ModelCanonical::Kmer kmer = model.codeSeed (seq.c_str(), Data::ASCII);
+        //    std::cout << "-------------------- CANONICAL --------------------" << std::endl;
+        //    std::cout << "kmer  value is: " << kmer.value()                    << std::endl;
+        //    std::cout << "kmer string is: " << model.toString(kmer.value())    << std::endl;
+        //    std::cout << "forward value  is: " << kmer.forward()                    << std::endl;
+        //    std::cout << "forward string is: " << model.toString(kmer.forward())    << std::endl;
+        //    std::cout << "revcomp value  is: " << kmer.revcomp()                    << std::endl;
+        //    std::cout << "revcomp string is: " << model.toString(kmer.revcomp())    << std::endl;
+        //    std::cout << "used strand is   : " << toString(kmer.strand())           << std::endl;
+        //    exit(1);
 		if(not valid_sequence(seq,kmer_size)){return;}
         const string string_seq = seq.toString();
+        //        cout<<string_seq<<endl; //DEBUG
+        /******** INDEXED KMERS                  **************/
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
-        
-//        if(repeated_kmers(model, itKmer)){return;}
 		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex()+1);
-//        cout<<string_seq<<endl; //DEBUG
+        
+        
+        /******** KMERS OF THE CONTEXTS          **************/
+        Kmer<KMER_SPAN(1)>::ModelCanonical modelContext (2*context_size);
+        
+        
+        /******** INDEXING CONTEXTS OF EACH KMER **************/
         int position=-1;
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
             position++;
             if (position<context_size) continue; // avoid first positions with no context
             if (position>seq.getDataSize()-context_size-kmer_size) break; // avoid last positions with no context
-            string context=string_seq.substr (position-context_size,context_size);
-            context+=string_seq.substr (position+kmer_size,context_size);
-//            cout<< "read "<<read_id<<" position "<<position<<" contexts are "<<context<<endl;
-            pair<u_int32_t,string> this_pair (read_id,context);
+            string contexts=string_seq.substr (position-context_size,context_size);
+            contexts+=string_seq.substr (position+kmer_size,context_size); //TODO : reverse complement the context if the canonical version of the kmer is not the kmer.
+            // We compute the kmer for a given sequence
+//            Kmer<KMER_SPAN(1)>::ModelCanonical::Kmer kmer = model.codeSeed (string_seq.substr(position,kmer_size).c_str(), Data::ASCII);
+            if (itKmer->strand()==STRAND_REVCOMP){ // the indexed version of the current kmer is reversed, we thus have to reverse the context sequences.
+//                Kmer<KMER_SPAN(1)>::ModelCanonical::Kmer codedContexts = modelContext.codeSeed (contexts.c_str(), Data::ASCII);
+//                cout<< "read "<<read_id<<" position "<<position<<" contexts are "<<contexts<<" "<<context_size<<endl;
+//                cout<< "read "<<read_id<<" position "<<position<<" contexts are "<<modelContext.toString(codedContexts.forward())<<endl;
+                contexts=modelContext.toString(modelContext.codeSeed (contexts.c_str(), Data::ASCII).revcomp());
+            }
+            pair<u_int32_t,string> this_pair (read_id,contexts);
 			quasiDico.set_value((itKmer)->value().getVal(), this_pair);
 		}
 	}
@@ -98,7 +124,8 @@ void SRC_linker_fuzzy::fill_quasi_dictionary (const int nbCores){
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size, context_size));
+    dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size, context_size));
+    cout<<"DONE "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
 }
 
 
@@ -115,8 +142,9 @@ public:
     int max_edit_distance;
     int windows_size;
 	vector<pair<u_int32_t,string>> associated_read_ids_and_contexts;
-	std::unordered_map<u_int32_t, vector<bool>> similar_read_ids_position; // each read id --> vector of positions covered by a shared kmer
-	Kmer<KMER_SPAN(1)>::ModelCanonical model;
+    std::unordered_map<u_int32_t, vector<bool>> similar_read_ids_position; // each read id --> vector of positions covered by a shared kmer
+    Kmer<KMER_SPAN(1)>::ModelCanonical model;
+    Kmer<KMER_SPAN(1)>::ModelCanonical modelContext;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
     
 	FunctorQuerySpanKmers(const FunctorQuerySpanKmers& lol)
@@ -132,12 +160,14 @@ public:
 		associated_read_ids_and_contexts=lol.associated_read_ids_and_contexts;
 		similar_read_ids_position=lol.similar_read_ids_position;
 		model=lol.model;
+        modelContext=lol.modelContext;
 		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
     
 	FunctorQuerySpanKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper,  pair<u_int32_t,string>>* quasiDico, const int threshold, const int windows_size, const int context_size, const int max_edit_distance)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold), windows_size(windows_size), context_size(context_size), max_edit_distance(max_edit_distance){
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico),  context_size(context_size), threshold(threshold),max_edit_distance(max_edit_distance), windows_size(windows_size){
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
+        modelContext=Kmer<KMER_SPAN(1)>::ModelCanonical (context_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
     
@@ -168,15 +198,25 @@ public:
             
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids_and_contexts);
             if(!exists) {continue;}
-
             
+            bool forward=(*itKmer)->strand()==STRAND_FORWARD?true:false;
+//            if (model.codeSeed (string_seq.substr(position,kmer_size).c_str(), Data::ASCII).strand()==STRAND_REVCOMP){ // the indexed version of the current kmer is reversed, we thus have to reverse the context sequences.
 			for(auto &read_id_and_contexts: associated_read_ids_and_contexts){
                 const u_int32_t read_id = read_id_and_contexts.first;
                 const string indexed_context_left = read_id_and_contexts.second.substr(0,context_size); //prefix of size context_size
                 const string indexed_context_right = read_id_and_contexts.second.substr(context_size); // suffix of size context_size (starting position context_size)
+                 string this_context_left;
+                 string this_context_right;
+                if (forward){
+                    this_context_left  = string_seq.substr (position_on_read-context_size, context_size);
+                    this_context_right = string_seq.substr (position_on_read+kmer_size   , context_size);
+                }
+                /************** Put back contexts in the right order **********/
+                if (not forward){
+                    this_context_left  = modelContext.toString(modelContext.codeSeed (string_seq.substr (position_on_read+kmer_size,    context_size).c_str(), Data::ASCII).revcomp());
+                    this_context_right = modelContext.toString(modelContext.codeSeed (string_seq.substr (position_on_read-context_size, context_size).c_str(), Data::ASCII).revcomp());
+                }
                 
-                const string this_context_left = string_seq.substr (position_on_read-context_size,context_size);
-                const string this_context_right = string_seq.substr (position_on_read+kmer_size,context_size);
                 
                 size_t current_edit_distance=edit_distance(indexed_context_left, this_context_left);
                 if (current_edit_distance>max_edit_distance) continue;
@@ -336,6 +376,13 @@ void SRC_linker_fuzzy::parse_query_sequences (int threshold, const int nbCores, 
 
 
 void SRC_linker_fuzzy::execute (){
+    
+
+  
+    
+    
+   
+
 	int nbCores = getInput()->getInt(STR_CORE);
 	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
     max_edit_distance = getInput()->getInt(STR_MAX_EDIT_DISTANCE);
