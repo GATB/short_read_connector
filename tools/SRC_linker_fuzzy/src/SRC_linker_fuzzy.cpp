@@ -23,17 +23,17 @@ static const char* STR_CORE = "-core";
 
 SRC_linker_fuzzy::SRC_linker_fuzzy ()  : Tool ("SRC_linker_fuzzy"){
 	// We add some custom arguments for command line interface
-	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
-	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
-	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
-	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
-	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.",    false, "75"));
+	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH,          "graph input",  true));
+	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT,     "bank input",   true));
+	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT,    "query input",  true));
+	getParser()->push_back (new OptionOneParam (STR_OUT_FILE,           "output_file",  true));
+	getParser()->push_back (new OptionOneParam (STR_THRESHOLD,          "Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.",    false, "75"));
 	getParser()->push_back (new OptionOneParam (STR_WINDOWS_SIZE, "size of the window. If the windows size is zero (default value), then the full read is considered",    false, "0"));
-    getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
-    getParser()->push_back (new OptionOneParam (STR_CONTEXT_SIZE, "size of each context",    false, "8"));
-    getParser()->push_back (new OptionOneParam (STR_MAX_EDIT_DISTANCE, "maximal edit distance (cumulated for both left and right contexts)",    false, "2"));
-    getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
-	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
+    getParser()->push_back (new OptionOneParam (STR_GAMMA,              "gamma value",              false, "2"));
+    getParser()->push_back (new OptionOneParam (STR_CONTEXT_SIZE,       "size of each context",     false, "8"));
+    getParser()->push_back (new OptionOneParam (STR_MAX_EDIT_DISTANCE,  "maximal edit distance (cumulated for both left and right contexts)",    false, "1"));
+    getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,        "fingerprint size",         false, "8"));
+	getParser()->push_back (new OptionOneParam (STR_CORE,               "Number of thread",         false, "1"));
 }
 
 
@@ -406,16 +406,17 @@ void SRC_linker_fuzzy::execute (){
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
-	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
-    getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
-    getInfo()->add (2, "windows_size size",  "%d",  windows_size);
-    getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
-    getInfo()->add (2, "Context size",  "%d",  context_size);
-	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
-    getInfo()->add (2, "gamma",  "%d",  gamma_value);
-	getInfo()->add (2, "Minimal kmer span percentage",  "%d",  threshold);
+	getInfo()->add (2, "Reference bank",  "%s",                     getInput()->getStr(STR_URI_BANK_INPUT).c_str());
+    getInfo()->add (2, "Query bank",  "%s",                         getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+    getInfo()->add (2, "windows_size size",  "%d",                  windows_size);
+    getInfo()->add (2, "Kmer size",  "%d",                          kmer_size);
+    getInfo()->add (2, "Context size",  "%d",                       context_size);
+    getInfo()->add (2, "Max edit distance in the context",  "%d",   max_edit_distance);
+	getInfo()->add (2, "Fingerprint size",  "%d",                   fingerprint_size);
+    getInfo()->add (2, "gamma",  "%d",                              gamma_value);
+	getInfo()->add (2, "Minimal kmer span percentage",  "%d",       threshold);
 	getInfo()->add (1, "output");
-	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
+	getInfo()->add (2, "Results written in",  "%s",                 getInput()->getStr(STR_OUT_FILE).c_str());
 }
 
 
