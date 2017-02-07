@@ -153,24 +153,13 @@ public:
                 }
                 
                 
-//                cout<<"hohohoh "<<i<<" "<<seq.getDataSize()<<endl; //DEB
                 for (int pos=i;pos<i+kmer_size;pos++){
                     if (pos>seq.getDataSize()) {
-//                        cout<<"ok !!"<<endl; //DEB
                         break;
                     }
                     position_shared[pos]=true;
                 }
                 
-                
-//                int nbtrue = 0; //DEBUG
-//                for (int z=0;z<seq.getDataSize();z++) { //DEBUG
-//                    if (position_shared[z]) { //DEBUG
-//                        cout<<position_shared[z]<<" "; //DEBUG
-//                        nbtrue++; //DEBUG
-//                    }
-//                }
-//                cout<<" nb true "<<nbtrue<<endl; //DEBUG
                 
                 
                 similar_read_ids_position[read_id] = position_shared;
