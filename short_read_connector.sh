@@ -37,6 +37,8 @@ echo  "	-q read_file_of_files for query"
 echo  "	  Example: -q data/c2.fasta.gz"
 
 echo  "OPTIONS:"
+echo  "	-c: use short_read_connector_counter (SRC_counter)"
+echo  "       -r: with this option (incompatible with SRC_counter), no precision about pair of similar reads is output. Only ids of reads from queries similar to at least one read from bank are output."
 echo  "	-p prefix. All out files will start with this prefix. Default=\"short_read_connector_res\""
 echo  "	-g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
 echo  "	-k value. Set the length of used kmers. Must fit the compiled value. Default=31"
@@ -48,11 +50,10 @@ echo  "	-s: Minimal percentage of shared kmer span for considering 2 reads as si
 echo  "	-w: size of the window. If the windows size is zero (default value), then the full read is considered"
 echo  "	-t: number of thread used. Default=0"
 echo  "	-d:  use disk over RAM (slower and no impact with -c option)"
-echo  "	-c: use short_read_connector_counter (SRC_counter)"
 }
 
 
-
+commet_like_option=""
 bank_set=""
 query_set=""
 kmer_size=31
@@ -70,7 +71,7 @@ windows_size=0
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts "hgb:q:p:k:a:s:t:f:G:w:dc" opt; do
+while getopts "hgb:q:p:k:a:s:t:f:G:w:dcr" opt; do
 case $opt in
 
 h)
@@ -86,6 +87,11 @@ gamma=$OPTARG
 d)
 echo "use disk mode">&2
 diskMode=1
+;;
+
+r)
+echo "Output only ids of read shared (no complete links)">&2
+commet_like_option="-no_sharing_detail"
 ;;
 
 w)
@@ -188,6 +194,12 @@ if [ $remove -eq 1 ]; then
 	rm -f ${out_dsk}
 fi
 
+if [ $countMode -eq 1 ]; then
+       if [ $commet_like_option != "" ]; then
+              echo "        ERROR: options -c and -r incompatibles"
+              exit 1       
+       fi
+fi
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
        cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
@@ -199,6 +211,9 @@ echo "there was a problem with the kmer counting."
 exit 1
 fi
 fi
+
+
+
 # Compare read sets
 
 
@@ -219,7 +234,7 @@ else
 fi
 
 # adding options
-cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}"
+cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma} ${commet_like_option}"
 
 # adding windows size option in the linker case
 if [ $countMode -eq 0 ]; then

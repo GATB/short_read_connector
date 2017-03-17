@@ -16,19 +16,21 @@ static const char* STR_WINDOWS_SIZE = "-windows_size";
 static const char* STR_THRESHOLD = "-kmer_threshold";
 static const char* STR_OUT_FILE = "-out";
 static const char* STR_CORE = "-core";
+static const char* STR_COMMET_LIKE = "-no_sharing_detail";
 
 
 SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
 	// We add some custom arguments for command line interface
-	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
-	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
-	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
-	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
-	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved).",    false, "75"));
+	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH,          "graph input",      true));
+	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT,     "bank input",       true));
+	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT,    "query input",      true));
+	getParser()->push_back (new OptionOneParam (STR_OUT_FILE,           "output_file",      true));
+	getParser()->push_back (new OptionOneParam (STR_THRESHOLD,          "Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved).",    false, "75"));
 	getParser()->push_back (new OptionOneParam (STR_WINDOWS_SIZE, "size of the window. If the windows size is zero (default value), then the full read is considered",    false, "0"));
-    getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
-	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
-	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
+    getParser()->push_back (new OptionOneParam (STR_GAMMA,              "gamma value",      false,  "2"));
+	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,        "fingerprint size", false,  "8"));
+    getParser()->push_back (new OptionOneParam (STR_CORE,               "Number of thread", false,  "1"));
+    getParser()->push_back (new OptionNoParam  (STR_COMMET_LIKE,        "Output ids of reads from query input that are shared with at least one read from reference bank input. With this option no information with whom a read is shared is provided, one only knows that a read is shared.", false));
 }
 
 
@@ -90,33 +92,35 @@ void SRC_linker_ram::fill_quasi_dictionary (const int nbCores){
 class FunctorQuerySpanKmers // FunctorQuery used after claires discussion: number of positions covered by a shared kmer.
 {
 public:
-	ISynchronizer* synchro;
-	FILE* outFile;
-	int kmer_size;
+	ISynchronizer*                                                      synchro;
+	FILE*                                                               outFile;
+	int                                                                 kmer_size;
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t>* quasiDico;
-    int threshold;
-    int windows_size;
-	vector<u_int32_t> associated_read_ids;
-	std::unordered_map<u_int32_t, vector<bool>> similar_read_ids_position; // each read id --> vector of positions covered by a shared kmer
-	Kmer<KMER_SPAN(1)>::ModelCanonical model;
-	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
+    int                                                                 threshold;
+    int                                                                 windows_size;
+    bool                                                                commet_like;
+	vector<u_int32_t>                                                   associated_read_ids;
+	std::unordered_map<u_int32_t, vector<bool>>                         similar_read_ids_position; // each read id --> vector of positions covered by a shared kmer
+	Kmer<KMER_SPAN(1)>::ModelCanonical                                  model;
+	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator*                       itKmer;
     
 	FunctorQuerySpanKmers(const FunctorQuerySpanKmers& lol)
 	{
-		synchro=lol.synchro;
-		outFile=lol.outFile;
-		kmer_size=lol.kmer_size;
-        windows_size = lol.windows_size;
-		quasiDico=lol.quasiDico;
-		threshold=lol.threshold;
-		associated_read_ids=lol.associated_read_ids;
-		similar_read_ids_position=lol.similar_read_ids_position;
-		model=lol.model;
-		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+		synchro                     =   lol.synchro;
+		outFile                     =   lol.outFile;
+		kmer_size                   =   lol.kmer_size;
+        windows_size                =   lol.windows_size;
+		quasiDico                   =   lol.quasiDico;
+		threshold                   =   lol.threshold;
+		associated_read_ids         =   lol.associated_read_ids;
+		similar_read_ids_position   =   lol.similar_read_ids_position;
+		model                       =   lol.model;
+        commet_like                 =   lol.commet_like;
+		itKmer                      =   new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
     
-	FunctorQuerySpanKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold, const int windows_size)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold), windows_size(windows_size){
+	FunctorQuerySpanKmers (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >* quasiDico, const int threshold, const int windows_size, const bool commet_like)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold), windows_size(windows_size), commet_like(commet_like){
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -126,16 +130,15 @@ public:
     
 	void operator() (Sequence& seq){
         int used_windows_size=windows_size;
-        if (windows_size==0){ // if windows size == 0 then we use the full read length as windows
+        if (windows_size==0){                                           // if windows size == 0 then we use the full read length as windows
             used_windows_size=seq.getDataSize();
         }
 		if(not valid_sequence(seq, kmer_size)){return;}
 		bool exists;
-		associated_read_ids={}; // list of the ids of reads from the bank where a kmer occurs
- 		similar_read_ids_position={}; // tmp list of couples <last used position, kmer spanning>
+		associated_read_ids={};                                         // list of the ids of reads from the bank where a kmer occurs
+ 		similar_read_ids_position={};                                   // tmp list of couples <last used position, kmer spanning>
 		itKmer->setData (seq.getData());
 		
-//        if(repeated_kmers(model, *itKmer)){return;}
         u_int i=0; // position on the read
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
@@ -159,39 +162,56 @@ public:
                     }
                     position_shared[pos]=true;
                 }
-                
-                
-                
                 similar_read_ids_position[read_id] = position_shared;
                 
             }
             ++i;
 		}
-		string toPrint;
-		bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
-		for (auto &matched_read:similar_read_ids_position){
+        if (commet_like)    print_read_similarities_commet_like (seq, used_windows_size);
+        else                print_read_similarities             (seq, used_windows_size);
+    }
+private:
+    void print_read_similarities_commet_like (Sequence& seq, const int used_windows_size){
+        for (auto &matched_read:similar_read_ids_position){
+            const int mpw = max_populated_window(matched_read.second,used_windows_size);
+            const float percentage_span_kmer = 100*mpw/float(used_windows_size);
+            if (percentage_span_kmer >= threshold) {
+                string toPrint  = to_string(seq.getIndex()+1)+"\n";
+                synchro->lock();
+                fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+                synchro->unlock ();
+                return;
+            }
+        }
+    }
+    
+    void print_read_similarities(Sequence& seq, const int used_windows_size){
+        string toPrint;
+        bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
+        for (auto &matched_read:similar_read_ids_position){
             const int mpw = max_populated_window(matched_read.second,used_windows_size);
             const float percentage_span_kmer = 100*mpw/float(used_windows_size);
             
-			if (percentage_span_kmer >= threshold) {
-				if (not read_id_printed){
-					read_id_printed=true;
-//					synchro->lock();
-					toPrint=to_string(seq.getIndex()+1)+":";
-				}
-				toPrint+=to_string(matched_read.first)+"-"+to_string(mpw)+"-"+to_string(float(percentage_span_kmer))+" ";
-			}
+            if (percentage_span_kmer >= threshold) {
+                if (not read_id_printed){
+                    read_id_printed=true;
+                    //					synchro->lock();
+                    toPrint=to_string(seq.getIndex()+1)+":";
+                }
+                toPrint+=to_string(matched_read.first)+"-"+to_string(mpw)+"-"+to_string(float(percentage_span_kmer))+" ";
+            }
             
-		}
-		if(read_id_printed){
+        }
+        if(read_id_printed){
             synchro->lock();
             toPrint+="\n";
             fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
-//			fwrite("\n", sizeof(char), 1, outFile);
-			synchro->unlock ();
-		}
-	}
-private:
+            //			fwrite("\n", sizeof(char), 1, outFile);
+            synchro->unlock ();
+        }
+
+    }
+    
     int max_populated_window(const vector<bool> populated, const int windows_size){
         const int size_vector = populated.size();
         const int last_excluded_starting_window_position = size_vector-windows_size+1;
@@ -214,47 +234,11 @@ private:
         return max;
     }
     
-//    
-//    int max_start_or_end(const vector<bool> populated, const int windows_size){
-//        const int start = max_starting_populated_window(populated,windows_size);
-//        const int end = max_ending_populated_window(populated,windows_size);
-//        
-//        if (start>end) return start;
-//        return end;
-//        
-//    }
-//    
-//    int max_starting_populated_window(const vector<bool> populated, const int windows_size){
-//        int number_populated=0;
-//        
-//        for(int i=0;i<windows_size;i++){
-//            if (populated[i]) {
-//                number_populated++;
-//            }
-//        }
-//        return number_populated;
-//    }
-//    
-//    
-//    
-//    int max_ending_populated_window(const vector<bool> populated, const int windows_size){
-//        const int size_vector = populated.size();
-//        const int last_excluded_starting_window_position = size_vector-windows_size+1;
-//        int number_populated=0;
-//        
-//        for(int i=size_vector-windows_size;i<size_vector;i++){
-//            if (populated[i]) {
-//                number_populated++;
-//            }
-//        }
-//        return number_populated;
-//    }
-
 };
 
 
 
-void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, const int windows_size){
+void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, const int windows_size, const bool commet_like){
     BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
     const std::vector<IBank*>& banks_of_queries = banks.getBanks();
     const int number_of_read_sets = banks_of_queries.size();
@@ -278,7 +262,7 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 1000);
-        dispatcher.iterate (itSeq, FunctorQuerySpanKmers(synchro,outFile, kmer_size,&quasiDico, threshold, windows_size));
+        dispatcher.iterate (itSeq, FunctorQuerySpanKmers(synchro,outFile, kmer_size,&quasiDico, threshold, windows_size, commet_like));
         delete synchro;
     }
 	fclose (outFile);
@@ -301,9 +285,9 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
 
 
 void SRC_linker_ram::execute (){
-	int nbCores = getInput()->getInt(STR_CORE);
-	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
-    gamma_value = getInput()->getInt(STR_GAMMA);
+	int nbCores             = getInput()->getInt(STR_CORE);
+	int fingerprint_size    = getInput()->getInt(STR_FINGERPRINT);
+    gamma_value             = getInput()->getInt(STR_GAMMA);
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
 	// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
@@ -316,9 +300,10 @@ void SRC_linker_ram::execute (){
 	create_quasi_dictionary(fingerprint_size, nbCores);
 	fill_quasi_dictionary(nbCores);
 
-	int threshold = getInput()->getInt(STR_THRESHOLD);
-    int windows_size = getInput()->getInt(STR_WINDOWS_SIZE);
-	parse_query_sequences(threshold, nbCores, windows_size);
+	int threshold           = getInput()->getInt(STR_THRESHOLD);
+    int windows_size        = getInput()->getInt(STR_WINDOWS_SIZE);
+    bool commet_like        = getInput()->get(STR_COMMET_LIKE)>0?true:false;
+	parse_query_sequences(threshold, nbCores, windows_size, commet_like);
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
@@ -330,5 +315,7 @@ void SRC_linker_ram::execute (){
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
 	getInfo()->add (2, "Minimal kmer span percentage",  "%d",  threshold);
 	getInfo()->add (1, "output");
+    if (commet_like)
+        getInfo()->add (2, "Output only ids of read shared (no complete links)");
 	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
 }

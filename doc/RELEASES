@@ -4,3 +4,7 @@
 	remove the -d option
 	add the -w option
 	update documentation accordingly
+1.1.0: (march 2017)
+	Add the -r option
+	add the scripts/SRC_linker2fasta.py script
+	update documentation accordingly
