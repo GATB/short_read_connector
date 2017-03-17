@@ -247,8 +247,14 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
 	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
 	FILE * outFile;
 	outFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
-    string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")-kmer_span query percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n"+"#Target read set: "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
-    fwrite((message).c_str(), sizeof(char), message.size(), outFile);
+    if (commet_like){
+        string message("#query_read_id \n#Target read set: "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
+        fwrite((message).c_str(), sizeof(char), message.size(), outFile);
+    }
+    else{
+        string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")-kmer_span query percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n"+"#Target read set: "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
+        fwrite((message).c_str(), sizeof(char), message.size(), outFile);
+    }
     
     
     for( int bank_id=0;bank_id<number_of_read_sets;bank_id++){ // iterate each bank

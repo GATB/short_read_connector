@@ -22,6 +22,30 @@ fi
 
 echo "*** DIFF LINKER OK ***"
 
+
+##########################################################
+## TEST RAM LINKER WITHOUT LINKS
+##########################################################
+
+# RUN SRC
+(bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -p linker_no_link -r) > log_linker 2> log_linker_err
+if [ $? -ne 0 ] ; then
+  echo "*** Test: FAILURE on linker without link output"
+  exit 1
+fi
+
+cat linker_no_link.txt | wc |  sed 's/^[ \t]*//;s/[ \t]*$//' > wc_linker_no_link # sed for removing spaces at the beggin and at the end of the line
+
+# CHECK EQUALITY
+diff wc_linker_no_link ref_wc_linker_no_link
+if [ $? -ne 0 ] ; then
+  echo "*** Test: FAILURE on diff linker without link output"
+  exit 1
+fi
+
+echo "*** DIFF LINKER WITHOUT LINKS OK ***"
+
+
 ##########################################################
 ## TEST DISK LINKER --> UNAVAILABLE FOR NOW
 ##########################################################
@@ -81,7 +105,7 @@ echo "*** DIFF COUNTER OK ***"
 ## CLEAN TEMP FILES
 ##########################################################
 
-rm -f Erase_Me *.h5 counter.txt wc_* linker.txt log*
+rm -f Erase_Me *.h5 counter.txt wc_* linker.txt linker_no_link.txt  log* 
 
 echo "*** Test: OK ***"
 
