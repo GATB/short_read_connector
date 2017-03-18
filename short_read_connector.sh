@@ -195,14 +195,14 @@ if [ $remove -eq 1 ]; then
 fi
 
 if [ $countMode -eq 1 ]; then
-       if [ $commet_like_option != "" ]; then
+       if [ $commet_like_option ]; then
               echo "        ERROR: options -c and -r incompatibles"
               exit 1       
        fi
 fi
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-       cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind all"
+       cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind one"
        echo ${cmd}
        ${cmd}
 if [ $? -ne 0 ]

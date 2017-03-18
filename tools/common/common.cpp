@@ -29,6 +29,7 @@ bool repeated_kmers(Kmer<KMER_SPAN(1)>::ModelCanonical& model, Kmer<KMER_SPAN(1)
 
 
 bool valid_sequence(Sequence& seq, const int kmer_size){
+    
 	size_t lenseq =seq.getDataSize();
     if (kmer_size>lenseq){return false;} //BUG HERE WE SHOULD NOT NEED THIS LINE (THE KMER ITERATOR CREATES FALSE KMERS WHEN SIZE OF THE SEQUENCE IS LOWER THAN K)
     
