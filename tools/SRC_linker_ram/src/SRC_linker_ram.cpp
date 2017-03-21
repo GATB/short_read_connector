@@ -57,18 +57,23 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores)
 struct FunctorIndexer{
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
+    u_int32_t read_id;
 
 	FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
+        read_id=-1;
 	}
 
 	void operator() (Sequence& seq){
+        read_id++;          // we do not use the seq.getIndex() id as it is limited to a read file and not a read set.
 		if(not valid_sequence(seq,kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
         
 //        if(repeated_kmers(model, itKmer)){return;}
-		u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex()+1);
+//        u_int32_t cur_read_id = static_cast<u_int32_t>(seq.getIndex());
+//        if (cur_read_id>read_id) read_id = cur_read_id;
+//        cout<<" indexing seq "<<read_id<<endl;
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
 			quasiDico.set_value((itKmer)->value().getVal(), read_id);
@@ -176,7 +181,7 @@ private:
             const int mpw = max_populated_window(matched_read.second,used_windows_size);
             const float percentage_span_kmer = 100*mpw/float(used_windows_size);
             if (percentage_span_kmer >= threshold) {
-                string toPrint  = to_string(seq.getIndex()+1)+"\n";
+                string toPrint  = to_string(seq.getIndex())+"\n";
                 synchro->lock();
                 fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
                 synchro->unlock ();
@@ -196,7 +201,7 @@ private:
                 if (not read_id_printed){
                     read_id_printed=true;
                     //					synchro->lock();
-                    toPrint=to_string(seq.getIndex()+1)+":";
+                    toPrint=to_string(seq.getIndex())+":";
                 }
                 toPrint+=to_string(matched_read.first)+"-"+to_string(mpw)+"-"+to_string(float(percentage_span_kmer))+" ";
             }
