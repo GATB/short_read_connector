@@ -65,7 +65,7 @@ struct FunctorIndexer{
 
 	void operator() (Sequence& seq){
         read_id++;          // we do not use the seq.getIndex() id as it is limited to a read file and not a read set.
-		if(not valid_sequence(seq,kmer_size)){return;}
+//		if(not valid_sequence(seq,kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
@@ -138,7 +138,7 @@ public:
         if (windows_size==0){                                           // if windows size == 0 then we use the full read length as windows
             used_windows_size=seq.getDataSize();
         }
-		if(not valid_sequence(seq, kmer_size)){return;}
+//		if(not valid_sequence(seq, kmer_size)){return;}
 		bool exists;
 		associated_read_ids={};                                         // list of the ids of reads from the bank where a kmer occurs
  		similar_read_ids_position={};                                   // tmp list of couples <last used position, kmer spanning>

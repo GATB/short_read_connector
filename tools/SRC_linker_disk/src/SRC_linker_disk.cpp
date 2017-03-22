@@ -37,7 +37,7 @@ struct FunctorCount{
 	FunctorCount(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, uint64_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
 
 	void operator() (Sequence& seq){
-		if(not valid_sequence(seq, kmer_size)){return;}
+//		if(not valid_sequence(seq, kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);//TODO we can do better than create this each time
         
@@ -133,7 +133,7 @@ struct FunctorIndexer{
 	}
 
 	void operator() (Sequence& seq){
-		if(not valid_sequence(seq, kmer_size)){return;}
+//		if(not valid_sequence(seq, kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
@@ -220,7 +220,7 @@ public:
 
 
 	void operator() (Sequence& seq){
-		if(not valid_sequence(seq, kmer_size)){return;}
+//		if(not valid_sequence(seq, kmer_size)){return;}
 		bool exists;
 		associated_read_ids={};
  		similar_read_ids_position_count={};

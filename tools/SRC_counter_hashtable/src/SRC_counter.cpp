@@ -162,7 +162,7 @@ public:
 	}
 
 	void operator() (Sequence& seq){
-		if(not valid_sequence(seq, kmer_size)){return;}
+//		if(not valid_sequence(seq, kmer_size)){return;}
 
 		bool exists;
 		unsigned char count;
