@@ -45,6 +45,8 @@ private:
 	u_int64_t nbSolidKmers;
     int gamma_value;
 	int kmer_size;
+    int zero_density_windows_size;              // if >0: this defines a window in which the zero density (a zero is defined as a position in which no kmer is shared)  is computed
+    int zero_density_threshold;                 // if zero_density_window_size >0: this threshold is used to select similar sequence having at least a window of size zero_density_window_size, in which the zero density is below zero_density_threshold
 	static const size_t span = KMER_SPAN(1);
 
 public:
