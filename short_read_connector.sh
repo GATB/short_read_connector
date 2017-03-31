@@ -4,7 +4,7 @@ version="1.0.0"
 
 
 
-EDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+EDIR=$( dirname "$( readlink -f "$0" 2> /dev/null || realpath "$0" )" )
 platform='mac'
 unamestr=`uname`
 if [[ "$unamestr" == 'Linux' ]]; then
