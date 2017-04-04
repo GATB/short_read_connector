@@ -202,7 +202,7 @@ if [ $countMode -eq 1 ]; then
 fi
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-       cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -solidity-kind one"
+       cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind one"
        echo ${cmd}
        ${cmd}
 if [ $? -ne 0 ]
