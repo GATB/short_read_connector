@@ -91,11 +91,11 @@ def convert_SRC_linker_output(read_offsets, remove_similar_reads, SRC_linker_out
         if line[0]=='#': #header
             continue
         line=line.rstrip()
-        query_read_id=int(line.split(':')[0])-1 # -1 as the read ids are 1 based in SRC
+        query_read_id=int(line.split(':')[0])
         query_read_header=get_header(bankfile,read_offsets[query_read_id]).split()[0].rstrip()[1:]
         targets=line.split(':')[1].split(' ')
         for target in targets:
-            target_read_id=int(target.split('-')[0])-1 # -1 as the read ids are 1 based in SRC
+            target_read_id=int(target.split('-')[0])
             target_read_kmer_covers = int(target.split('-')[1])
             target_read_similarity=round(float(target.split('-')[2]),2)
             if remove_similar_reads and target_read_id == query_read_id: continue
