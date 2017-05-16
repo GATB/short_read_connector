@@ -16,6 +16,8 @@ def get_read(sequencefile,offset):
         exit(1)
     read+=sequencefile.readline()#include header2
     read+=sequencefile.readline()#include quality
+    return read
+
 
 def index_bank_offsets(bank_file_name):
     read_offsets= []
@@ -75,6 +77,7 @@ def convert_SRC_linker_output(read_offsets, SRC_linker_output_file_name, read_ba
             continue
         line=line.rstrip()
         query_read_id=int(line.split(':')[0])
+        #~ query_read_id=int(line.split(':')[0])-1 # -1 as the read ids are 1 based in SRC // NO LONGER
         print get_read(bankfile,read_offsets[query_read_id]),
     srcfile.close()
     bankfile.close()
