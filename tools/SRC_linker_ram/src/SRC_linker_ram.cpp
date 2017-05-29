@@ -61,21 +61,21 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores)
 struct FunctorIndexer{
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
-    u_int32_t read_id;
+//    u_int32_t read_id;
 
 	FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
-        read_id=-1;
+//        read_id=-1;
 	}
 
 	void operator() (Sequence& seq){
-        read_id++;          // we do not use the seq.getIndex() id as it is limited to a read file and not a read set.
+//        read_id++;          // we do not use the seq.getIndex() id as it is limited to a read file and not a read set.
 //		if(not valid_sequence(seq,kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
         
 //        if(repeated_kmers(model, itKmer)){return;}
-//        u_int32_t cur_read_id = static_cast<u_int32_t>(seq.getIndex());
+        u_int32_t read_id = static_cast<u_int32_t>(seq.getIndex());
 //        if (cur_read_id>read_id) read_id = cur_read_id;
 //        cout<<" indexing seq "<<read_id<<endl;
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
