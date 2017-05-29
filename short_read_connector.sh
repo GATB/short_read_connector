@@ -4,7 +4,7 @@ version="1.0.0"
 
 
 
-EDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+EDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )
 platform='mac'
 unamestr=`uname`
 if [[ "$unamestr" == 'Linux' ]]; then
