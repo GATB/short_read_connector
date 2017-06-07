@@ -16,6 +16,10 @@ static int NT2int(char nt){
 	return (nt>>1)&3;
 }
 
+
+
+
+
 static bool repeated_kmers(Kmer<KMER_SPAN(1)>::ModelCanonical& model, Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator& itKmer){
     std::unordered_set<string> kmer_seen;
     for (itKmer.first(); !itKmer.isDone(); itKmer.next()){

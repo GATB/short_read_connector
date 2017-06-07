@@ -362,10 +362,12 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
 
 
 void SRC_linker_ram::execute (){
+    // TODO Here (or before : check the bank is not composed of several read files)
+    
 	int nbCores                     = getInput()->getInt(STR_CORE);
 	int fingerprint_size            = getInput()->getInt(STR_FINGERPRINT);
     gamma_value                     = getInput()->getInt(STR_GAMMA);
-    zero_density_windows_size        = getInput()->getInt(STR_ZERO_DENSITY_WINDOWS_SIZE);
+    zero_density_windows_size       = getInput()->getInt(STR_ZERO_DENSITY_WINDOWS_SIZE);
     zero_density_threshold          = getInput()->getInt(STR_ZERO_DENSITY_THRESHOLD);
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers

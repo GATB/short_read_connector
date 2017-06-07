@@ -29,12 +29,12 @@ fi
 function help {
 echo "short_read_connector.sh - Compare reads from two read sets (distinct or not)"
 echo "Version "$version
-echo "Usage: sh short_read_connector.sh -b read_file_of_files -q read_file_of_files [OPTIONS]"
+echo "Usage: sh short_read_connector.sh -b read_file -q read_file_of_files [OPTIONS]"
 echo  "MANDATORY:"
-echo  " -b read_file_of_files for bank"
+echo  " -b read_files for bank"
 echo  "	  Example: -b data/c1.fasta.gz"
 echo  " -q read_file_of_files for query"
-echo  "	  Example: -q data/c2.fasta.gz"
+echo  "	  Example: -q data/fof.txt (with fof being a file of file descriptor)"
 
 echo  "OPTIONS:"
 echo  "	  -c: use short_read_connector_counter (SRC_counter)"
@@ -44,7 +44,7 @@ echo  "	  -g: with this option, if a file of solid kmer exists with same prefix 
 echo  "	  -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
 echo  "	  -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12"
 echo  "	  -G value. gamma value. MPHF expert users parameter - Default=2"
-echo  "	  -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
+echo  "	  -a: kmer abundance min (kmer from seen less than this value both in the bank and in the query are not indexed). Default=1"
 echo  "	  -s: Minimal percentage of shared kmer span for considering 2 reads as similar.	The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.)"
 echo  "	  -l: Keep low complexity regions (default false)"
 
@@ -58,7 +58,7 @@ commet_like_option=""
 bank_set=""
 query_set=""
 kmer_size=31
-abundance_min=2
+abundance_min=1
 gamma=2
 fingerprint_size=12
 kmer_threshold=75
@@ -193,6 +193,8 @@ help
 exit 1
 fi
 
+
+
 out_dsk=${prefix}"_solid_kmers_k"${kmer_size}".h5"
 result_file=${prefix}".txt"
 
@@ -209,7 +211,8 @@ if [ $countMode -eq 1 ]; then
 fi
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-	   cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind one"
+	   ls ${bank_set} ${query_set} > FOF_FOR_DSK_REMOVE_ME_PLEASE.txt 
+	   cmd="${dsk_bin} -file FOF_FOR_DSK_REMOVE_ME_PLEASE.txt -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind all"
 	   echo ${cmd}
 	   ${cmd}
 if [ $? -ne 0 ]

@@ -61,6 +61,7 @@ public:
     void create_quasi_dictionary(int fingerprint_size, int nbCores);
 
     void fill_quasi_dictionary(const int nbCores);
+    
 
     void parse_query_sequences(int threshold, const int nbCores, const int windows_size, const bool commet_like);
 };
