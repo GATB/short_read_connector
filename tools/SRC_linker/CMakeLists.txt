@@ -1,4 +1,4 @@
-project(SRC_counter_hashtable)
+project(SRC_linker_ram)
 
 ################################################################################
 # TOOL
@@ -10,10 +10,12 @@ add_definitions (${gatb-core-flags})
 # we give the headers directories from : 
 #       - from project source 
 #       - from GATB-CORE source
-include_directories (src  ${gatb-core-includes})
+include_directories (src  ${gatb-core-includes} ../common)
 
 # we define the files to be compiled
-file (GLOB_RECURSE  ProjectFiles  src/*)
+file (GLOB_RECURSE  ProjectFiles  src/* ../common)
+get_property(inc_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+message("inc_dirs = ${inc_dirs}")
 
 # we define the artifact to be built: the project binary
 add_executable        (${PROJECT_NAME}  ${ProjectFiles})

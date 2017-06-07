@@ -16,14 +16,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *****************************************************************************/
 
-#ifndef _TOOL_SRC_linker_disk_HPP_
-#define _TOOL_SRC_linker_disk_HPP_
+#ifndef _TOOL_SRC_linker_ram_HPP_
+#define _TOOL_SRC_linker_ram_HPP_
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
 #include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionary/src/quasidictionary.h"
-#include "common.hpp"
+#include <common.hpp>
 /********************************************************************************/
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -37,32 +37,34 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class SRC_linker_disk : public Tool
+class SRC_linker_ram : public Tool
 {
-
+	
 private:
-	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, uint64_t > quasiDico;
+	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
 	u_int64_t nbSolidKmers;
     int gamma_value;
 	int kmer_size;
+    int zero_density_windows_size;              // if >0: this defines a window in which the zero density (a zero is defined as a position in which no kmer is shared)  is computed
+    int zero_density_threshold;                 // if zero_density_window_size >0: this threshold is used to select similar sequence having at least a window of size zero_density_window_size, in which the zero density is below zero_density_threshold
 	static const size_t span = KMER_SPAN(1);
+    bool keep_low_complexity;
 
 public:
 
-	FILE * pFile;
     // Constructor
-	SRC_linker_disk ();
+	SRC_linker_ram ();
 
     // Actual job done by the tool is here
     void execute ();
 
-    void create_quasi_dictionary(int fingerprint_size,int nbCores);
+    void create_quasi_dictionary(int fingerprint_size, int nbCores);
 
     void fill_quasi_dictionary(const int nbCores);
 
-    void parse_query_sequences(int threshold, const int nbCores);
+    void parse_query_sequences(int threshold, const int nbCores, const int windows_size, const bool commet_like);
 };
 
 /********************************************************************************/
 
-#endif /* _TOOL_commet_linked_ram_HPP_ */
+#endif /* _TOOL_SRC_linker_ram_HPP_ */

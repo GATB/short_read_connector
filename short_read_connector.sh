@@ -46,6 +46,7 @@ echo  "	  -f value. Fingerprint size. Size of the key associated to each indexed
 echo  "	  -G value. gamma value. MPHF expert users parameter - Default=2"
 echo  "	  -a: kmer abundance min (kmer from bank seen less than this value are not indexed). Default=2"
 echo  "	  -s: Minimal percentage of shared kmer span for considering 2 reads as similar.	The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.)"
+echo  "	  -l: Keep low complexity regions (default false)"
 
 echo  "	  -w: size of the window. If the windows size is zero (default value), then the full read is considered"
 echo  "	  -t: number of thread used. Default=0"
@@ -63,6 +64,7 @@ fingerprint_size=12
 kmer_threshold=75
 core_used=0
 prefix="short_read_connector_res"
+keep_low_complexity_option=""
 remove=1
 diskMode=0
 countMode=0
@@ -71,7 +73,7 @@ windows_size=0
 #######################################################################
 #################### GET OPTIONS				#######################
 #######################################################################
-while getopts "hgb:q:p:k:a:s:t:f:G:w:dcr" opt; do
+while getopts "hgb:q:p:k:a:s:t:f:G:w:dcrl" opt; do
 case $opt in
 
 h)
@@ -129,6 +131,11 @@ prefix=$OPTARG
 g)
 echo "reuse solid precomputed solid kmers if exists"
 remove=0
+;;
+
+l)
+echo "keep low complexity sequences"
+keep_low_complexity_option="-keep_low_complexity"
 ;;
 
 k)
@@ -239,7 +246,7 @@ fi
 
 
 # adding options
-cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma} ${commet_like_option} ${zerod_option}"
+cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma} ${commet_like_option} ${zerod_option} ${keep_low_complexity_option}"
 
 
 

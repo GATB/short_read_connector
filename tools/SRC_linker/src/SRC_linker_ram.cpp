@@ -8,17 +8,18 @@ using namespace std;
 
 
 // We define some constant strings for names of command line parameters
-static const char* STR_URI_BANK_INPUT           = "-bank";
-static const char* STR_URI_QUERY_INPUT          = "-query";
-static const char* STR_FINGERPRINT              = "-fingerprint_size";
-static const char* STR_GAMMA                    = "-gamma";
-static const char* STR_WINDOWS_SIZE             = "-windows_size";
-static const char* STR_THRESHOLD                = "-kmer_threshold";
-static const char* STR_OUT_FILE                 = "-out";
-static const char* STR_CORE                     = "-core";
-static const char* STR_COMMET_LIKE              = "-no_sharing_detail";
-static const char* STR_zero_density_windows_size = "-zero_density_windows_size";
-static const char* STR_ZERO_DENSITY_THRESHOLD   = "-zero_density_threshold";
+static const char* STR_URI_BANK_INPUT               = "-bank";
+static const char* STR_URI_QUERY_INPUT              = "-query";
+static const char* STR_FINGERPRINT                  = "-fingerprint_size";
+static const char* STR_GAMMA                        = "-gamma";
+static const char* STR_WINDOWS_SIZE                 = "-windows_size";
+static const char* STR_THRESHOLD                    = "-kmer_threshold";
+static const char* STR_OUT_FILE                     = "-out";
+static const char* STR_CORE                         = "-core";
+static const char* STR_COMMET_LIKE                  = "-no_sharing_detail";
+static const char* STR_KEEP_LOW_COMPLEXITY          = "-keep_low_complexity";
+static const char* STR_ZERO_DENSITY_WINDOWS_SIZE    = "-zero_density_windows_size";
+static const char* STR_ZERO_DENSITY_THRESHOLD       = "-zero_density_threshold";
 
 
 SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
@@ -33,7 +34,9 @@ SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,                "fingerprint size", false,  "8"));
     getParser()->push_back (new OptionOneParam (STR_CORE,                       "Number of thread(s)", false,  "1"));
     getParser()->push_back (new OptionNoParam  (STR_COMMET_LIKE,                "Output ids of reads from query input that are shared with at least one read from reference bank input. With this option no information with whom a read is shared is provided, one only knows that a read is shared.", false));
-    getParser()->push_back (new OptionOneParam (STR_zero_density_windows_size,   "If defined (>0): two reads are linked if they DO NOT contain a window of this size, with a percentage of zero higher than \"-zero_density_threshold\". Note: this test is performed over the full read length, not limited to \"-windows_size\"", false,  "0"));
+    
+    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,        "Conserve low complexity sequences during indexing and querying", false));
+    getParser()->push_back (new OptionOneParam (STR_ZERO_DENSITY_WINDOWS_SIZE,  "If defined (>0): two reads are linked if they DO NOT contain a window of this size, with a percentage of zero higher than \"-zero_density_threshold\". Note: this test is performed over the full read length, not limited to \"-windows_size\"", false,  "0"));
     getParser()->push_back (new OptionOneParam (STR_ZERO_DENSITY_THRESHOLD,     "See \"-zero_density_windows_size\"", false, "80"));
 }
 
@@ -61,15 +64,14 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores)
 struct FunctorIndexer{
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int kmer_size;
-//    u_int32_t read_id;
+    bool keep_low_complexity;
 
-	FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {
-//        read_id=-1;
+	FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, bool keep_low_complexity)  :  quasiDico(quasiDico), kmer_size(kmer_size), keep_low_complexity(keep_low_complexity) {
 	}
 
 	void operator() (Sequence& seq){
 //        read_id++;          // we do not use the seq.getIndex() id as it is limited to a read file and not a read set.
-//		if(not valid_sequence(seq,kmer_size)){return;}
+		if(not keep_low_complexity and not is_high_complexity(seq,kmer_size)){return;}
 		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
 		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
@@ -93,7 +95,7 @@ void SRC_linker_ram::fill_quasi_dictionary (const int nbCores){
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size));
+	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size,keep_low_complexity));
 }
 
 
@@ -114,6 +116,7 @@ public:
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator*                       itKmer;
     int                                                                 zero_density_windows_size;
     int                                                                 zero_density_threshold;
+    bool                                                                keep_low_complexity;
     
 	FunctorQuerySpanKmers(const FunctorQuerySpanKmers& lol)
 	{
@@ -128,8 +131,10 @@ public:
 		model                       =   lol.model;
         commet_like                 =   lol.commet_like;
 		itKmer                      =   new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
-        zero_density_windows_size    =   lol.zero_density_windows_size;
+        zero_density_windows_size   =   lol.zero_density_windows_size;
         zero_density_threshold      =   lol.zero_density_threshold;
+        keep_low_complexity         =   lol.keep_low_complexity;
+        
 	}
     
 	FunctorQuerySpanKmers (ISynchronizer* synchro,
@@ -141,7 +146,8 @@ public:
                            const int windows_size,
                            const bool commet_like,
                            const int zero_density_windows_size,
-                           const int zero_density_threshold)
+                           const int zero_density_threshold,
+                           const bool keep_low_complexity)
 	:
     synchro                     (synchro),
     outFile                     (outFile),
@@ -151,7 +157,8 @@ public:
     windows_size                (windows_size),
     commet_like                 (commet_like),
     zero_density_windows_size    (zero_density_windows_size),
-    zero_density_threshold      (zero_density_threshold)
+    zero_density_threshold      (zero_density_threshold),
+    keep_low_complexity         (keep_low_complexity)
     {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
@@ -165,7 +172,7 @@ public:
         if (windows_size==0){                                           // if windows size == 0 then we use the full read length as windows
             used_windows_size=seq.getDataSize();
         }
-//		if(not valid_sequence(seq, kmer_size)){return;}
+        if(not keep_low_complexity and not is_high_complexity(seq, kmer_size)){return;}
 		bool exists;
 		associated_read_ids={};                                         // list of the ids of reads from the bank where a kmer occurs
  		similar_read_ids_position={};                                   // tmp list of couples <last used position, kmer spanning>
@@ -332,7 +339,7 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 1000);
-        dispatcher.iterate (itSeq, FunctorQuerySpanKmers(synchro,outFile, kmer_size,&quasiDico, threshold, windows_size, commet_like,zero_density_windows_size,zero_density_threshold));
+        dispatcher.iterate (itSeq, FunctorQuerySpanKmers(synchro,outFile, kmer_size,&quasiDico, threshold, windows_size, commet_like,zero_density_windows_size,zero_density_threshold, keep_low_complexity));
         delete synchro;
     }
 	fclose (outFile);
@@ -358,7 +365,7 @@ void SRC_linker_ram::execute (){
 	int nbCores                     = getInput()->getInt(STR_CORE);
 	int fingerprint_size            = getInput()->getInt(STR_FINGERPRINT);
     gamma_value                     = getInput()->getInt(STR_GAMMA);
-    zero_density_windows_size        = getInput()->getInt(STR_zero_density_windows_size);
+    zero_density_windows_size        = getInput()->getInt(STR_ZERO_DENSITY_WINDOWS_SIZE);
     zero_density_threshold          = getInput()->getInt(STR_ZERO_DENSITY_THRESHOLD);
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
@@ -372,9 +379,10 @@ void SRC_linker_ram::execute (){
 	create_quasi_dictionary(fingerprint_size, nbCores);
 	fill_quasi_dictionary(nbCores);
 
-	int threshold           = getInput()->getInt(STR_THRESHOLD);
-    int windows_size        = getInput()->getInt(STR_WINDOWS_SIZE);
-    bool commet_like        = getInput()->get(STR_COMMET_LIKE)>0?true:false;
+	int threshold            = getInput()->getInt(STR_THRESHOLD);
+    int windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
+    bool commet_like         = getInput()->get(STR_COMMET_LIKE)>0?true:false;
+    keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
 	parse_query_sequences(threshold, nbCores, windows_size, commet_like);
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
@@ -386,6 +394,11 @@ void SRC_linker_ram::execute (){
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
 	getInfo()->add (2, "Minimal kmer span percentage",  "%d",  threshold);
+    if(keep_low_complexity)
+        getInfo()->add (2, "Low complexity sequences were kept");
+    else
+        getInfo()->add (2, "Low complexity sequences were removed");
+        
 	getInfo()->add (1, "output");
     if (commet_like)
         getInfo()->add (2, "Output only ids of read shared (no complete links)");

@@ -8,13 +8,14 @@ using namespace std;
 
 
 // We define some constant strings for names of command line parameters
-static const char* STR_URI_BANK_INPUT = "-bank";
-static const char* STR_URI_QUERY_INPUT = "-query";
-static const char* STR_FINGERPRINT = "-fingerprint_size";
-static const char* STR_GAMMA = "-gamma";
-static const char* STR_THRESHOLD = "-kmer_threshold";
-static const char* STR_OUT_FILE = "-out";
-static const char* STR_CORE = "-core";
+static const char* STR_URI_BANK_INPUT               = "-bank";
+static const char* STR_URI_QUERY_INPUT              = "-query";
+static const char* STR_FINGERPRINT                  = "-fingerprint_size";
+static const char* STR_GAMMA                        = "-gamma";
+static const char* STR_THRESHOLD                    = "-kmer_threshold";
+static const char* STR_KEEP_LOW_COMPLEXITY          = "-keep_low_complexity";
+static const char* STR_OUT_FILE                     = "-out";
+static const char* STR_CORE                         = "-core";
 
 
 SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
@@ -25,6 +26,7 @@ SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
 	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal number of shared kmers for considering 2 reads as similar",    false, "10"));
+    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,        "Conserve low complexity sequences during indexing and querying", false));
 	getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
 	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
@@ -35,11 +37,13 @@ SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 struct FunctorIndexer
 {
 	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > &quasiDico;
-	int kmer_size;
-
-	FunctorIndexer(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size)  :  quasiDico(quasiDico), kmer_size(kmer_size) {}
+    int kmer_size;
+    bool keep_low_complexity;
+    
+	FunctorIndexer(quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >& quasiDico, int kmer_size, bool keep_low_complexity)  :  quasiDico(quasiDico), kmer_size(kmer_size), keep_low_complexity(keep_low_complexity) {}
 
 	void operator() (Kmer<>::Count & itKmer){
+//        if(not keep_low_complexity and not is_high_complexity(itKmer.getValue()),kmer_size)){return;}
 		quasiDico.set_value(itKmer.value.getVal(), itKmer.abundance>0xFF?0xFF:(unsigned char)itKmer.abundance);
 	}
 };
@@ -65,7 +69,7 @@ void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const 
     
 	ProgressIterator<Kmer<>::Count> itKmers (solidKmers.iterator(), "Indexing solid kmers counts", nbSolidKmers);
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itKmers, FunctorIndexer(quasiDico, kmer_size));
+	dispatcher.iterate (itKmers, FunctorIndexer(quasiDico, kmer_size, keep_low_complexity));
     
     cout<<"Filled quasi-ictionary memory usage (MB) = "<<System::info().getMemorySelfUsed()/1024<<endl;
 }
@@ -88,17 +92,19 @@ public:
 	vector<u_int32_t> associated_read_ids;
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
+    bool keep_low_complexity;
 
 	FunctorQuery(const FunctorQuery& lol)
 	{
-		synchro=lol.synchro;
-		outFile=lol.outFile;
-		kmer_size=lol.kmer_size;
-		quasiDico=lol.quasiDico;
-		threshold=lol.threshold;
-		associated_read_ids=lol.associated_read_ids;
-		model=lol.model;
-		itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+		synchro             =lol.synchro;
+		outFile             =lol.outFile;
+		kmer_size           =lol.kmer_size;
+		quasiDico           =lol.quasiDico;
+		threshold           =lol.threshold;
+		associated_read_ids =lol.associated_read_ids;
+		model               =lol.model;
+		itKmer              = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+        keep_low_complexity = lol.keep_low_complexity;
 	}
 
 
@@ -147,7 +153,7 @@ public:
 
 	void operator() (Sequence& seq){
 //		if(not valid_sequence(seq, kmer_size)){return;}
-
+        if(not keep_low_complexity and not is_high_complexity(seq,kmer_size)){return;}
 		bool exists;
 		unsigned char count;
 		itKmer->setData (seq.getData());
@@ -212,8 +218,10 @@ void SRC_counter::parse_query_sequences (int threshold, const int nbCores){
 
 void SRC_counter::execute (){
 	int nbCores = getInput()->getInt(STR_CORE);
-	int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
+    int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
+    keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
     gamma_value = getInput()->getInt(STR_GAMMA);
+    cout<<"gamma value is"<<gamma_value<<endl;
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
 	// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
@@ -235,7 +243,12 @@ void SRC_counter::execute (){
     getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
-	getInfo()->add (2, "Threshold size",  "%d",  threshold);
+    getInfo()->add (2, "Threshold size",  "%d",  threshold);
+    if(keep_low_complexity)
+        getInfo()->add (2, "Low complexity query sequences were kept");
+    else
+        getInfo()->add (2, "Low complexity query sequences were removed");
+    
 	getInfo()->add (1, "output");
 	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
 }
