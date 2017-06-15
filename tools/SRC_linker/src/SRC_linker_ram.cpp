@@ -62,18 +62,24 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores)
 
 
 struct FunctorIndexer{
+    ISynchronizer*                                                      synchro;
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
-	int kmer_size;
-    bool keep_low_complexity;
+	int                                                                 kmer_size;
+    bool                                                                keep_low_complexity;
+    Kmer<KMER_SPAN(1)>::ModelCanonical                                  model;
 
-	FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, bool keep_low_complexity)  :  quasiDico(quasiDico), kmer_size(kmer_size), keep_low_complexity(keep_low_complexity) {
+    FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, bool keep_low_complexity, ISynchronizer* synchro)  :
+        synchro(synchro),
+        quasiDico(quasiDico),
+        kmer_size(kmer_size),
+        keep_low_complexity(keep_low_complexity) {
+        model = Kmer<KMER_SPAN(1)>::ModelCanonical(kmer_size);
 	}
 
 	void operator() (Sequence& seq){
 //        read_id++;          // we do not use the seq.getIndex() id as it is limited to a read file and not a read set.
 		if(not keep_low_complexity and not is_high_complexity(seq,kmer_size)){return;}
-		Kmer<KMER_SPAN(1)>::ModelCanonical model (kmer_size);
-		Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
+        Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
         
 //        if(repeated_kmers(model, itKmer)){return;}
@@ -95,7 +101,8 @@ void SRC_linker_ram::fill_quasi_dictionary (const int nbCores){
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
 	Dispatcher dispatcher (nbCores, 10000);
-	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size,keep_low_complexity));
+    ISynchronizer* synchro = System::thread().newSynchronizer();
+	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size, keep_low_complexity, synchro));
 }
 
 
@@ -362,7 +369,6 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
 
 
 void SRC_linker_ram::execute (){
-    // TODO Here (or before : check the bank is not composed of several read files)
     
 	int nbCores                     = getInput()->getInt(STR_CORE);
 	int fingerprint_size            = getInput()->getInt(STR_FINGERPRINT);
