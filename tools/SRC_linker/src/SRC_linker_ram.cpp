@@ -62,14 +62,12 @@ void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores)
 
 
 struct FunctorIndexer{
-    ISynchronizer*                                                      synchro;
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int                                                                 kmer_size;
     bool                                                                keep_low_complexity;
     Kmer<KMER_SPAN(1)>::ModelCanonical                                  model;
 
-    FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, bool keep_low_complexity, ISynchronizer* synchro)  :
-        synchro(synchro),
+    FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, bool keep_low_complexity)  :
         quasiDico(quasiDico),
         kmer_size(kmer_size),
         keep_low_complexity(keep_low_complexity) {
@@ -88,9 +86,7 @@ struct FunctorIndexer{
 //        cout<<" indexing seq "<<read_id<<endl;
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
-            synchro->lock();
 			quasiDico.set_value((itKmer)->value().getVal(), read_id);
-            synchro->unlock();
 		}
 	}
 };
@@ -103,8 +99,7 @@ void SRC_linker_ram::fill_quasi_dictionary (const int nbCores){
 	LOCAL (bank);
 	ProgressIterator<Sequence> itSeq (*bank);
 	Dispatcher dispatcher (nbCores, 10000);
-    ISynchronizer* synchro = System::thread().newSynchronizer();
-	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size, keep_low_complexity, synchro));
+	dispatcher.iterate (itSeq, FunctorIndexer(quasiDico, kmer_size, keep_low_complexity));
 }
 
 
