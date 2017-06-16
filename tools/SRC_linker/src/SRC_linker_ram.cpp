@@ -88,7 +88,9 @@ struct FunctorIndexer{
 //        cout<<" indexing seq "<<read_id<<endl;
 		for (itKmer.first(); !itKmer.isDone(); itKmer.next()){
 			// Adding the read id to the list of ids associated to this kmer.note that the kmer may not exist in the dictionary if it was under the solidity threshold.in this case, nothing is done
+            synchro->lock();
 			quasiDico.set_value((itKmer)->value().getVal(), read_id);
+            synchro->unlock();
 		}
 	}
 };
