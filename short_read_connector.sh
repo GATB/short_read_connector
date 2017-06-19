@@ -44,7 +44,8 @@ function help {
     echo  "   -k value. Set the length of used kmers. Must fit the compiled value. Default=31"
     echo  "   -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12"
     echo  "   -G value. gamma value. MPHF expert users parameter - Default=2"
-    echo  "   -a: kmer abundance min (kmer from seen less than this value both in the bank and in the query are not indexed). Default=1"
+    echo  "   -a: kmer abundance min (kmer from seen less than this value both in the bank and in the query are not indexed). Default=2"
+    echo  "   -A: with is option, kmers must be present at least \'a\' times in the bank AND in the queries to be indexed."
     echo  "   -s: Minimal percentage of shared kmer span for considering 2 reads as similar.    The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.)"
     echo  "   -l: Keep low complexity regions (default false)"
 
@@ -58,7 +59,7 @@ commet_like_option=""
 bank_set=""
 query_set=""
 kmer_size=31
-abundance_min=1
+abundance_min=2
 gamma=2
 fingerprint_size=12
 kmer_threshold=75
@@ -67,13 +68,14 @@ prefix="short_read_connector_res"
 keep_low_complexity_option=""
 remove=1
 diskMode=0
+abundanceMode=0 # 0: only bank, 1: bank and query"
 countMode=0
 windows_size=0
 
 #######################################################################
 #################### GET OPTIONS                #######################
 #######################################################################
-while getopts "hgb:q:p:k:a:s:t:f:G:w:dcrl" opt; do
+while getopts "hgb:q:p:k:a:s:t:f:G:w:dcrlA" opt; do
     case $opt in
 
     h)
@@ -131,6 +133,10 @@ while getopts "hgb:q:p:k:a:s:t:f:G:w:dcrl" opt; do
     g)
         echo "reuse solid precomputed solid kmers if exists"
         remove=0
+        ;;
+    A)
+        echo "kmers must be present at least \'a\' times in the bank AND in the queries to be indexed"
+        abundanceMode=1
         ;;
 
     l)
@@ -226,8 +232,12 @@ if [ $countMode -eq 1 ]; then
 fi
 # Count kmers using dsk if file absent
 if [ ! -e ${out_dsk} ]; then
-    ls ${bank_set} ${query_set} > FOF_FOR_DSK_REMOVE_ME_PLEASE.txt 
-    cmd="${dsk_bin} -file FOF_FOR_DSK_REMOVE_ME_PLEASE.txt -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind all"
+    if [ $abundanceMode -eq 1 ]; then
+        ls ${bank_set} ${query_set} > FOF_FOR_DSK_REMOVE_ME_PLEASE.txt 
+        cmd="${dsk_bin} -file FOF_FOR_DSK_REMOVE_ME_PLEASE.txt -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind all"
+    else
+        cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind one"
+    fi 
     echo ${cmd}
     ${cmd}
     if [ $? -ne 0 ]
