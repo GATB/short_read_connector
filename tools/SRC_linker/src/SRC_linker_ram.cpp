@@ -115,8 +115,7 @@ public:
     int                                                                 windows_size;
     bool                                                                commet_like;
 	vector<u_int32_t>                                                   associated_read_ids;
-	std::unordered_map<u_int32_t, vector<bool>>                         similar_read_ids_position; // each read id --> vector of positions covered by a shared kmer
-	Kmer<KMER_SPAN(1)>::ModelCanonical                                  model;
+    Kmer<KMER_SPAN(1)>::ModelCanonical                                  model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator*                       itKmer;
     int                                                                 zero_density_windows_size;
     int                                                                 zero_density_threshold;
@@ -131,7 +130,6 @@ public:
 		quasiDico                   =   lol.quasiDico;
 		threshold                   =   lol.threshold;
 		associated_read_ids         =   lol.associated_read_ids;
-		similar_read_ids_position   =   lol.similar_read_ids_position;
 		model                       =   lol.model;
         commet_like                 =   lol.commet_like;
 		itKmer                      =   new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
@@ -178,7 +176,7 @@ public:
         }
         if(not keep_low_complexity and not is_high_complexity(seq, kmer_size)){return;}
 		bool exists;
-		associated_read_ids={};                                         // list of the ids of reads from the bank where a kmer occurs
+        std::unordered_map<u_int32_t, vector<bool>>                         similar_read_ids_position ; // each read id --> vector of positions covered by a shared kmer
  		similar_read_ids_position={};                                   // tmp list of couples <last used position, kmer spanning>
 		itKmer->setData (seq.getData());
 		
@@ -211,11 +209,11 @@ public:
             ++i;
 		}
 
-        if (commet_like)    print_read_similarities_commet_like (seq, used_windows_size);
-        else                print_read_similarities             (seq, used_windows_size);
+        if (commet_like)    print_read_similarities_commet_like (seq, used_windows_size, similar_read_ids_position);
+        else                print_read_similarities             (seq, used_windows_size, similar_read_ids_position);
     }
 private:
-    void print_read_similarities_commet_like (Sequence& seq, const int used_windows_size){
+    void print_read_similarities_commet_like (Sequence& seq, const int used_windows_size, const std::unordered_map<u_int32_t, vector<bool>>  similar_read_ids_position){
         for (auto &matched_read:similar_read_ids_position){
             
             if (zero_density_windows_size > 0 && contains_high_zero_density_windows(matched_read.second)){ continue; }
@@ -231,7 +229,7 @@ private:
         }
     }
     
-    void print_read_similarities(Sequence& seq, const int used_windows_size){
+    void print_read_similarities(Sequence& seq, const int used_windows_size, const std::unordered_map<u_int32_t, vector<bool>>  similar_read_ids_position){
         string toPrint;
         bool read_id_printed=false; // Print (and sync file) only if the read is similar to something.
         for (auto &matched_read:similar_read_ids_position){
