@@ -291,7 +291,8 @@ private:
         int max = 0;
         int number_populated=0;
         
-        for(int i=0;i<windows_size;i++){
+        for(int i=0;i<windows_size && i<size_vector;i++){
+            
             if (populated[i]) {
                 number_populated++;
             }
