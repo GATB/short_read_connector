@@ -108,8 +108,8 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold) {
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold, const int keep_low_complexity)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold), keep_low_complexity(keep_low_complexity) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -209,7 +209,7 @@ void SRC_counter::parse_query_sequences (int threshold, const int nbCores){
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 10000);
-        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold));
+        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold,keep_low_complexity));
         delete synchro;
     }
     fclose (pFile);
