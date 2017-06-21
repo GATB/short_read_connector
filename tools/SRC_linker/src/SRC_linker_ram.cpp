@@ -376,20 +376,10 @@ void SRC_linker_ram::execute (){
 	// We need a non null finger print because of non solid non indexed kmers
 	//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
 	//		fingerprint_size=0;
-<<<<<<< HEAD
-    
-    int threshold            = getInput()->getInt(STR_THRESHOLD);
-    int windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
-    bool commet_like         = getInput()->get(STR_COMMET_LIKE)>0?true:false;
-	cout<<"fingerprint = "<<fingerprint_size<<endl;
-	create_quasi_dictionary(fingerprint_size, nbCores);
-	fill_quasi_dictionary(nbCores);
 
-=======
     int threshold            = getInput()->getInt(STR_THRESHOLD);
     int windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
     bool commet_like         = getInput()->get(STR_COMMET_LIKE)>0?true:false;
->>>>>>> debugg
     keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
 	create_quasi_dictionary(fingerprint_size, nbCores);
 	fill_quasi_dictionary(nbCores);
