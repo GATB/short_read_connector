@@ -158,7 +158,7 @@ public:
     threshold                   (threshold),
     windows_size                (windows_size),
     commet_like                 (commet_like),
-    zero_density_windows_size    (zero_density_windows_size),
+    zero_density_windows_size   (zero_density_windows_size),
     zero_density_threshold      (zero_density_threshold),
     keep_low_complexity         (keep_low_complexity)
     {
@@ -170,6 +170,10 @@ public:
 	}
     
 	void operator() (Sequence& seq){
+        bool optimization_dont_check_all=false;                         // TODO CREATE AN OPTION IF WE KEEP THIS FEATURE
+        std::unordered_set<u_int32_t>                                             similar_read_ids ; // conserve read ids that share enought similarity
+        
+        
         int used_windows_size=windows_size;
         if (windows_size==0){                                           // if windows size == 0 then we use the full read length as windows
             used_windows_size=seq.getDataSize();
@@ -201,15 +205,43 @@ public:
                     position_shared[pos]=true;
                 }
                 similar_read_ids_position[read_id] = position_shared;
+                if (optimization_dont_check_all){
+                    int start = i+kmer_size-used_windows_size;
+                    if(start<0) start=0;
+                    // if this target read was not already found as similar and if the last reachable window has higher score than the threshold, then add this target read id in the list of similar reads.
+                    if(similar_read_ids.count(read_id) == 0 && 100*max_populated_window(position_shared, used_windows_size, start>=0?start:0, i+kmer_size)/float(used_windows_size)>=threshold)
+                    {
+                        similar_read_ids.insert(read_id);
+//                        cout<< "AJOUT de "<<read_id<<endl;
+                    }
+                }
                 
             }
             ++i;
 		}
-
-        if (commet_like)    print_read_similarities_commet_like (seq, used_windows_size, similar_read_ids_position);
-        else                print_read_similarities             (seq, used_windows_size, similar_read_ids_position);
+        
+        if (optimization_dont_check_all){
+            print_read_similarities_dont_check_all (seq,  similar_read_ids);
+        }
+        else{
+            if (commet_like)    print_read_similarities_commet_like (seq, used_windows_size, similar_read_ids_position);
+            else                print_read_similarities             (seq, used_windows_size, similar_read_ids_position);
+        }
     }
 private:
+    void print_read_similarities_dont_check_all (Sequence&  seq,  std::unordered_set<u_int32_t> similar_read_ids ){
+        if (similar_read_ids.empty()) return;
+        string toPrint;
+        toPrint=to_string(seq.getIndex())+":";
+        for (auto &target_read_id:similar_read_ids)
+            toPrint+=to_string(target_read_id)+" ";
+        toPrint+="\n";
+        synchro->lock();
+        fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+        synchro->unlock ();
+        
+    }
+    
     void print_read_similarities_commet_like (Sequence& seq, const int used_windows_size, const std::unordered_map<u_int32_t, vector<bool>>  similar_read_ids_position){
         for (auto &matched_read:similar_read_ids_position){
             
@@ -246,10 +278,9 @@ private:
             
         }
         if(read_id_printed){
-            synchro->lock();
             toPrint+="\n";
+            synchro->lock();
             fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
-            //			fwrite("\n", sizeof(char), 1, outFile);
             synchro->unlock ();
         }
 
@@ -282,13 +313,17 @@ private:
     }
 
     
-    int max_populated_window(const vector<bool> populated, const int windows_size){
-        const int size_vector = populated.size();
-        const int last_excluded_starting_window_position = size_vector-windows_size+1;
+    int max_populated_window(const vector<bool> populated, const int windows_size, const int start=0, int stop=-1){
+        
+//        cout<< "mpw  "<<start<<" "<<stop<<endl; //DEBUG
+        if (stop==-1) stop=populated.size();
+//        cout<< "mpw2 "<<start<<" "<<stop<<endl; //DEBUG
+        const int last_excluded_starting_window_position = stop-windows_size+1>=0?stop-windows_size+1:0;
+//        cout<<"leswp "<<last_excluded_starting_window_position<<endl; //DEBUG
         int max = 0;
         int number_populated=0;
         
-        for(int i=0;i<windows_size && i<size_vector;i++){
+        for(int i=start;i<windows_size && i<stop;i++){
             
             if (populated[i]) {
                 number_populated++;
@@ -296,7 +331,7 @@ private:
         }
         max=number_populated;
 
-        for (int pos=1;pos<last_excluded_starting_window_position;pos+=1){
+        for (int pos=start+1;pos<last_excluded_starting_window_position;pos+=1){
             if (populated[pos-1]){number_populated--;}
             if (populated[pos+windows_size-1]){number_populated++;}
             if (number_populated>max) max=number_populated;
