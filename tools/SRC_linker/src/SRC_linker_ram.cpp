@@ -243,19 +243,22 @@ private:
     }
     
     void print_read_similarities_commet_like (Sequence& seq, const int used_windows_size, const std::unordered_map<u_int32_t, vector<bool>>  similar_read_ids_position){
+        float max_percentage_span_kmer = 0;
         for (auto &matched_read:similar_read_ids_position){
             
             if (zero_density_windows_size > 0 && contains_high_zero_density_windows(matched_read.second)){ continue; }
             const int mpw = max_populated_window(matched_read.second,used_windows_size);
             const float percentage_span_kmer = 100*mpw/float(used_windows_size);
-            if (percentage_span_kmer >= threshold) {
-                string toPrint  = to_string(seq.getIndex())+"\n";
-                synchro->lock();
-                fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
-                synchro->unlock ();
-                return;
-            }
+            if (percentage_span_kmer > max_percentage_span_kmer) max_percentage_span_kmer = percentage_span_kmer;
         }
+        if (max_percentage_span_kmer >= threshold) {
+            string toPrint  = to_string(seq.getIndex())+" "+to_string(int(max_percentage_span_kmer))+"\n";
+            synchro->lock();
+            fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+            synchro->unlock ();
+            return;
+        }
+        
     }
     
     void print_read_similarities(Sequence& seq, const int used_windows_size, const std::unordered_map<u_int32_t, vector<bool>>  similar_read_ids_position){
@@ -358,7 +361,7 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
         fwrite((message).c_str(), sizeof(char), message.size(), outFile);
     }
     else{
-        string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")-kmer_span query percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n"+"#Target read set: "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
+        string message("#query_read_id [target_read_id-kmer_span (k="+to_string(kmer_size)+")-kmer_span query_percentage]* or U (unvalid read, containing not only ACGT characters or low complexity read)\n"+"#Target read set: "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
         fwrite((message).c_str(), sizeof(char), message.size(), outFile);
     }
     

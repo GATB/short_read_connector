@@ -29,3 +29,5 @@ target_link_libraries (${PROJECT_NAME}  ${gatb-core-libraries})
 
 # We copy the project binary to the 'bin' directory
 INSTALL (TARGETS ${PROJECT_NAME} DESTINATION bin)
+
+
