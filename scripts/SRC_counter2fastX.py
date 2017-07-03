@@ -53,37 +53,41 @@ def index_offsets(bank_file_name):
     return read_offsets
 
 
-def convert_SRC_counter_output(SRC_linker_output_file_name, threshold):
+def convert_SRC_counter_output(SRC_linker_output_file_name, threshold, prefix):
     readfile=None
+    outFile=None
     srcfile = open(SRC_linker_output_file_name,"r")
     for line in srcfile.readlines():
         if line[0]=='#': # a header eg:#query_read_id (from bank ../data/c1.fasta.gz) mean median min max percentage_shared_positions -- number of shared 31mers with banq ../data/c1.fasta.gz
             read_file_name = line.split('(')[1].split(')')[0].split(" ")[2] # dirty, sorry.
             read_offsets=index_offsets(read_file_name)
             if readfile: readfile.close()
+            if outFile: outFile.close()
             if "gz" in read_file_name:
                 readfile=gzip.open(read_file_name,"r")
             else: 
                 readfile=open(read_file_name,"r")
+            outfile=open(prefix+"_"+read_file_name.split("/")[-1],"w")
         else:               # a counted line: 1 5.728571 6 0 10 84.000000: read id1 kmers occur in avg 5.72 times in the bank, mean is 6 times, min is 0 and max is 10. 84% of the read is covered by kmers indexed in the bank. We apply the threshold on this last field. 
             line=line.rstrip().split(" ")
             if float(line[-1])>=threshold:
-                 print get_read(readfile,read_offsets[int(line[0])]),
+                 outfile.write(get_read(readfile,read_offsets[int(line[0])]))
                 
    
     readfile.close()
     srcfile.close()
+    outfile.close()
     
     
-if len(sys.argv)!=3:
+if len(sys.argv)!=4:
      print "USAGE"
      print " Used to transform the SRC_counter output into a set of reads from the query (only reads for the query that share enough similarity with at least one read from the bank)"
      print " For other needs, contact pierre.peterlongo@inria.fr"
      print "COMMAND"
-     print  sys.argv[0],"<SRC_linker output file> <threshold>"
+     print  sys.argv[0],"<SRC_linker output file> <threshold><prefix>"
      sys.exit(1)
 
 
 # read_bank_queries_file_name=sys.argv[1]
 SRC_linker_output_file_name=sys.argv[1]
-convert_SRC_counter_output(SRC_linker_output_file_name,int(sys.argv[2]))
+convert_SRC_counter_output(SRC_linker_output_file_name,int(sys.argv[2]),sys.argv[3])
