@@ -256,9 +256,11 @@ fi
 if [ $diskMode -eq 0 ]; then
     if [ $countMode -eq 0 ]; then
         cmd="${BIN_DIR}/SRC_linker_ram"
+        threshold_option="-kmer_threshold ${kmer_threshold}"
     else
         # SRC_COUNTER
         cmd="${BIN_DIR}/SRC_counter"
+        threshold_option=""
     fi
 else
     echo "Disk version not maintained anymore - sorry"
@@ -274,7 +276,7 @@ fi
 
 
 # adding options
-cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma} ${commet_like_option} ${zerod_option} ${keep_low_complexity_option}"
+cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${result_file} ${threshold_option} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma} ${commet_like_option} ${zerod_option} ${keep_low_complexity_option}"
 
 
 
