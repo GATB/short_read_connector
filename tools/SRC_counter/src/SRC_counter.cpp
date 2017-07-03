@@ -12,7 +12,6 @@ static const char* STR_URI_BANK_INPUT               = "-bank";
 static const char* STR_URI_QUERY_INPUT              = "-query";
 static const char* STR_FINGERPRINT                  = "-fingerprint_size";
 static const char* STR_GAMMA                        = "-gamma";
-static const char* STR_THRESHOLD                    = "-kmer_threshold";
 static const char* STR_KEEP_LOW_COMPLEXITY          = "-keep_low_complexity";
 static const char* STR_OUT_FILE                     = "-out";
 static const char* STR_CORE                         = "-core";
@@ -20,16 +19,15 @@ static const char* STR_CORE                         = "-core";
 
 SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 	// We add some custom arguments for command line interface
-	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH, "graph input",   true));
+	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH,          "graph input",   true));
 	//getParser()->push_back (new OptionOneParam (STR_VERBOSE,   "verbosity (0:no display, 1: display kmers, 2: display distrib",  false, "0"));
-	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT, "bank input",    true));
-	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT, "query input",    true));
-	getParser()->push_back (new OptionOneParam (STR_OUT_FILE, "output_file",    true));
-	getParser()->push_back (new OptionOneParam (STR_THRESHOLD, "Minimal number of shared kmers for considering 2 reads as similar",    false, "10"));
-    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,        "Conserve low complexity sequences during indexing and querying", false));
-	getParser()->push_back (new OptionOneParam (STR_GAMMA, "gamma value",    false, "2"));
-	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT, "fingerprint size",    false, "8"));
-	getParser()->push_back (new OptionOneParam (STR_CORE, "Number of thread",    false, "1"));
+	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT,     "bank input",    true));
+	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT,    "query input",    true));
+	getParser()->push_back (new OptionOneParam (STR_OUT_FILE,           "output_file",    true));
+    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,"Conserve low complexity sequences during indexing and querying", false));
+	getParser()->push_back (new OptionOneParam (STR_GAMMA,              "gamma value",    false, "2"));
+	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,        "fingerprint size",    false, "8"));
+	getParser()->push_back (new OptionOneParam (STR_CORE,               "Number of thread",    false, "1"));
 }
 
 
@@ -88,7 +86,6 @@ public:
 	FILE* outFile;
 	int kmer_size;
 	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char>* quasiDico;
-	int threshold;
 	vector<u_int32_t> associated_read_ids;
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
@@ -100,7 +97,6 @@ public:
 		outFile             =lol.outFile;
 		kmer_size           =lol.kmer_size;
 		quasiDico           =lol.quasiDico;
-		threshold           =lol.threshold;
 		associated_read_ids =lol.associated_read_ids;
 		model               =lol.model;
 		itKmer              = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
@@ -108,8 +104,8 @@ public:
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico, const int threshold, const int keep_low_complexity)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), threshold(threshold), keep_low_complexity(keep_low_complexity) {
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico,  const int keep_low_complexity)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), keep_low_complexity(keep_low_complexity) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -150,6 +146,25 @@ public:
 
 
 	}
+    
+    
+    
+    int number_positions_covered_shared_kmer(vector<int> &v, const int size_seq){
+        
+        
+        if(v.size()==0) return 0;
+        int number_positions_covered    = 0;
+        int next_uncovered_position     = -1;
+        std::vector<int>::iterator it   = v.begin();
+        for(int i=0; i<size_seq;i++){
+            if (i==*it){
+                next_uncovered_position=i+kmer_size;
+                if(it+1 != v.end()) it++;
+            }
+            if (i<next_uncovered_position) number_positions_covered++;
+        }
+        return number_positions_covered;
+    }
 
 	void operator() (Sequence& seq){
 //		if(not valid_sequence(seq, kmer_size)){return;}
@@ -158,20 +173,28 @@ public:
 		unsigned char count;
 		itKmer->setData (seq.getData());
 		vector<int> values;
-
+        vector<int> covered_positions;
+        
+        int position=0;
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,count);
 			if(!exists) {
                 count=0;
             }
-			values.push_back(count);
+            values.push_back(count);
+            if (count>0) covered_positions.push_back(position);
+            position++;
 		}
-
+        float percentage_shared_positions = 100*number_positions_covered_shared_kmer(covered_positions, seq.getDataSize())/float(seq.getDataSize());
 		float mean;
 		int median, min, max;
+//        cout<<seq.getIndex()<<" ";
+//        for (std::vector<int>::iterator it = covered_positions.begin() ; it != covered_positions.end(); ++it)
+//            std::cout << ' ' << *it;
+//        cout<<endl<<to_string(percentage_shared_positions)<<endl;
 		if(mean_median_min_max(values, mean, median, min, max)){
 
-			string toPrint (to_string(seq.getIndex())+" "+to_string(mean)+" "+to_string(median)+" "+to_string(min)+" "+to_string(max)+"\n");
+			string toPrint (to_string(seq.getIndex())+" "+to_string(mean)+" "+to_string(median)+" "+to_string(min)+" "+to_string(max)+" "+to_string(percentage_shared_positions)+"\n");
 			synchro->lock();
 			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			synchro->unlock ();
@@ -188,7 +211,7 @@ public:
 };
 
 
-void SRC_counter::parse_query_sequences (int threshold, const int nbCores){
+void SRC_counter::parse_query_sequences (const int nbCores){
     
     BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
     const std::vector<IBank*>& banks_of_queries = banks.getBanks();
@@ -203,13 +226,13 @@ void SRC_counter::parse_query_sequences (int threshold, const int nbCores){
         
         IBank* bank=banks_of_queries[bank_id];
         LOCAL (bank);
-        string message("#query_read_id (from bank "+bank->getId()+") mean median min max number of shared "+to_string(kmer_size)+"mers with banq "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
+        string message("#query_read_id (from bank "+bank->getId()+") mean median min max percentage_shared_positions -- number of shared "+to_string(kmer_size)+"mers with banq "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
         fwrite((message).c_str(), sizeof(char), message.size(), pFile);
         string progressMessage("Querying read set "+bank->getId());
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 10000);
-        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, threshold,keep_low_complexity));
+        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity));
         delete synchro;
     }
     fclose (pFile);
@@ -233,8 +256,7 @@ void SRC_counter::execute (){
 	cout<<"fingerprint = "<<fingerprint_size<<endl;
 	create_and_fill_quasi_dictionary(fingerprint_size, nbCores);
 
-	int threshold = getInput()->getInt(STR_THRESHOLD);
-	parse_query_sequences(threshold-1, nbCores); //-1 avoids >=
+	parse_query_sequences(nbCores);
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
@@ -243,7 +265,6 @@ void SRC_counter::execute (){
     getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
-    getInfo()->add (2, "Threshold size",  "%d",  threshold);
     if(keep_low_complexity)
         getInfo()->add (2, "Low complexity query sequences were kept");
     else
