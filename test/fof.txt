@@ -1,2 +1,2 @@
-/Users/ppeterlo/workspace/gatb-rconnector/data/c2.fasta.gz
-/Users/ppeterlo/workspace/gatb-rconnector/data/c1.fasta.gz
+../data/c2.fasta.gz
+../data/c1.fasta.gz

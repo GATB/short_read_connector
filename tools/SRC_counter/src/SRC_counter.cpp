@@ -15,6 +15,7 @@ static const char* STR_GAMMA                        = "-gamma";
 static const char* STR_KEEP_LOW_COMPLEXITY          = "-keep_low_complexity";
 static const char* STR_OUT_FILE                     = "-out";
 static const char* STR_CORE                         = "-core";
+static const char* STR_THRESHOLD                    = "-coverage_threshold";
 
 
 SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
@@ -26,8 +27,9 @@ SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE,           "output_file",    true));
     getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,"Conserve low complexity sequences during indexing and querying", false));
 	getParser()->push_back (new OptionOneParam (STR_GAMMA,              "gamma value",    false, "2"));
-	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,        "fingerprint size",    false, "8"));
-	getParser()->push_back (new OptionOneParam (STR_CORE,               "Number of thread",    false, "1"));
+    getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,        "fingerprint size",    false, "8"));
+    getParser()->push_back (new OptionOneParam (STR_CORE,               "Number of thread",    false, "1"));
+    getParser()->push_back (new OptionOneParam (STR_THRESHOLD,          "Threshold to keep a read in the boolean vector",    false, "50"));
 }
 
 
@@ -234,8 +236,7 @@ void SRC_counter::parse_query_sequences (const int nbCores){
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
     
-    int threshold =90; //TODO: option
-    
+    int threshold = getInput()->getInt(STR_THRESHOLD);
 	cout<<"Query "<<kmer_size<<"-mers from "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
     for( int bank_id=0;bank_id<number_of_read_sets;bank_id++){ // iterate each bank
         
@@ -255,6 +256,7 @@ void SRC_counter::parse_query_sequences (const int nbCores){
         dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity, threshold, &bv));
         delete synchro;
         std::string query_filename = bank->getId().substr(bank->getId().find_last_of("/\\") + 1);
+        cout<<bv.nb_one()<<" reads in out_"+query_filename+"_in_"+bank_filename+".bv"<<endl;
         bv.print("out_"+query_filename+"_in_"+bank_filename+".bv");
     }
     fclose (pFile);

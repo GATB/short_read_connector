@@ -260,7 +260,7 @@ if [ $diskMode -eq 0 ]; then
     else
         # SRC_COUNTER
         cmd="${BIN_DIR}/SRC_counter"
-        threshold_option=""
+        threshold_option="-coverage_threshold ${kmer_threshold}"
     fi
 else
     echo "Disk version not maintained anymore - sorry"
