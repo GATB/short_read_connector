@@ -90,22 +90,26 @@ public:
 	Kmer<KMER_SPAN(1)>::ModelCanonical model;
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
     bool keep_low_complexity;
+    int threshold;
+    BooleanVector* bv;
 
 	FunctorQuery(const FunctorQuery& lol)
 	{
-		synchro             =lol.synchro;
-		outFile             =lol.outFile;
-		kmer_size           =lol.kmer_size;
-		quasiDico           =lol.quasiDico;
-		associated_read_ids =lol.associated_read_ids;
-		model               =lol.model;
+		synchro             = lol.synchro;
+		outFile             = lol.outFile;
+		kmer_size           = lol.kmer_size;
+		quasiDico           = lol.quasiDico;
+		associated_read_ids = lol.associated_read_ids;
+		model               = lol.model;
 		itKmer              = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
         keep_low_complexity = lol.keep_low_complexity;
+        threshold           = lol.threshold;
+        bv                  = lol.bv;
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico,  const int keep_low_complexity)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), keep_low_complexity(keep_low_complexity) {
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico,  const int keep_low_complexity, int threshold, BooleanVector * bv)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), keep_low_complexity(keep_low_complexity), threshold(threshold), bv(bv) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -188,15 +192,14 @@ public:
         float percentage_shared_positions = 100*number_positions_covered_shared_kmer(covered_positions, seq.getDataSize())/float(seq.getDataSize());
 		float mean;
 		int median, min, max;
-//        cout<<seq.getIndex()<<" ";
-//        for (std::vector<int>::iterator it = covered_positions.begin() ; it != covered_positions.end(); ++it)
-//            std::cout << ' ' << *it;
-//        cout<<endl<<to_string(percentage_shared_positions)<<endl;
 		if(mean_median_min_max(values, mean, median, min, max)){
 
 			string toPrint (to_string(seq.getIndex())+" "+to_string(mean)+" "+to_string(median)+" "+to_string(min)+" "+to_string(max)+" "+to_string(percentage_shared_positions)+"\n");
 			synchro->lock();
 			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+            if (percentage_shared_positions>=threshold) {
+                bv->set(seq.getIndex());
+            }
 			synchro->unlock ();
 		}
 
@@ -206,13 +209,24 @@ public:
 			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
 			synchro->unlock ();
 		}
-
+        
 	}
 };
 
+unsigned long get_bank_nb_items(IBank* bank){
+    if(bank->getNbItems() != -1) return bank->getNbItems();
+    // else: non implemented
+    Iterator<Sequence>* it = bank->iterator();
+    LOCAL (it);
+    // We loop over sequences.
+    unsigned long size=0;
+    for (it->first(); !it->isDone(); it->next()){++size;}
+    return size;
+}
 
 void SRC_counter::parse_query_sequences (const int nbCores){
-    
+    std::string bank_filename = getInput()->getStr(STR_URI_BANK_INPUT).substr(getInput()->getStr(STR_URI_BANK_INPUT).find_last_of("/\\") + 1);
+
     BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
     const std::vector<IBank*>& banks_of_queries = banks.getBanks();
     const int number_of_read_sets = banks_of_queries.size();
@@ -220,20 +234,28 @@ void SRC_counter::parse_query_sequences (const int nbCores){
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
     
+    int threshold =90; //TODO: option
     
-	cout<<"Query "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
+	cout<<"Query "<<kmer_size<<"-mers from "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
     for( int bank_id=0;bank_id<number_of_read_sets;bank_id++){ // iterate each bank
         
         IBank* bank=banks_of_queries[bank_id];
         LOCAL (bank);
+        BooleanVector bv;
+        unsigned long bank_size = get_bank_nb_items(bank);
+        bv.init_false(bank_size); // quick and dirty. Todo: implement a realocation of the bv in case the estimation is too low.
+        bv.set_comment(string("Reads from "+bank->getId()+" in "+getInput()->getStr(STR_URI_BANK_INPUT)+" with threshold "+to_string(threshold)));
+        
         string message("#query_read_id (from bank "+bank->getId()+") mean median min max percentage_shared_positions -- number of shared "+to_string(kmer_size)+"mers with banq "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
         fwrite((message).c_str(), sizeof(char), message.size(), pFile);
         string progressMessage("Querying read set "+bank->getId());
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 10000);
-        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity));
+        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity, threshold, &bv));
         delete synchro;
+        std::string query_filename = bank->getId().substr(bank->getId().find_last_of("/\\") + 1);
+        bv.print("out_"+query_filename+"_in_"+bank_filename+".bv");
     }
     fclose (pFile);
 }
