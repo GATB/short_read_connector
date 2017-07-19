@@ -175,7 +175,7 @@ public:
         
         
         int used_windows_size=windows_size;
-        if (windows_size==0){                                           // if windows size == 0 then we use the full read length as windows
+        if (windows_size==0 || windows_size>seq.getDataSize()){                                           // if windows size == 0 then we use the full read length as windows
             used_windows_size=seq.getDataSize();
         }
         if(not keep_low_complexity and not is_high_complexity(seq, kmer_size)){return;}
@@ -316,35 +316,7 @@ private:
     }
 
     
-    int max_populated_window(const vector<bool> populated, const int windows_size, const int start=0, int stop=-1){
-        
-//        cout<< "mpw  "<<start<<" "<<stop<<endl; //DEBUG
-        if (stop==-1) stop=populated.size();
-//        cout<< "mpw2 "<<start<<" "<<stop<<endl; //DEBUG
-        const int last_excluded_starting_window_position = stop-windows_size+1>=0?stop-windows_size+1:0;
-//        cout<<"leswp "<<last_excluded_starting_window_position<<endl; //DEBUG
-        int max = 0;
-        int number_populated=0;
-        
-        for(int i=start;i<windows_size && i<stop;i++){
-            
-            if (populated[i]) {
-                number_populated++;
-            }
-        }
-        max=number_populated;
-
-        for (int pos=start+1;pos<last_excluded_starting_window_position;pos+=1){
-            if (populated[pos-1]){number_populated--;}
-            if (populated[pos+windows_size-1]){number_populated++;}
-            if (number_populated>max) max=number_populated;
-        }
-//        cout<<max<<" "<<windows_size<<endl; //DEBUG
-        return max;
-    }
-    
 };
-
 
 
 void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, const int windows_size, const bool commet_like){

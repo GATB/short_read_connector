@@ -16,6 +16,7 @@ static const char* STR_KEEP_LOW_COMPLEXITY          = "-keep_low_complexity";
 static const char* STR_OUT_FILE                     = "-out";
 static const char* STR_CORE                         = "-core";
 static const char* STR_THRESHOLD                    = "-coverage_threshold";
+static const char* STR_WINDOWS_SIZE                 = "-windows_size";
 
 
 SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
@@ -29,7 +30,9 @@ SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
 	getParser()->push_back (new OptionOneParam (STR_GAMMA,              "gamma value",    false, "2"));
     getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,        "fingerprint size",    false, "8"));
     getParser()->push_back (new OptionOneParam (STR_CORE,               "Number of thread",    false, "1"));
-    getParser()->push_back (new OptionOneParam (STR_THRESHOLD,          "Threshold to keep a read in the boolean vector",    false, "50"));
+//    getParser()->push_back (new OptionOneParam (STR_THRESHOLD,          "Threshold to keep a read in the boolean vector",    false, "50"));
+    getParser()->push_back (new OptionOneParam (STR_THRESHOLD,                  "Minimal percentage of shared kmer span for considering a query read as similar to a read set.  The kmer span is the number of bases from the read query covered by a kmer shared with the target bank read set. If a read of length 80 has a kmer-span of 60 with the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read is output in the boolean vector).",    false, "50"));
+    getParser()->push_back (new OptionOneParam (STR_WINDOWS_SIZE, "size of the window. If the windows size is zero (default value), then the full read is considered",    false, "0"));
 }
 
 
@@ -93,6 +96,7 @@ public:
 	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator* itKmer;
     bool keep_low_complexity;
     int threshold;
+    int windows_size;
     BooleanVector* bv;
 
 	FunctorQuery(const FunctorQuery& lol)
@@ -106,12 +110,13 @@ public:
 		itKmer              = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
         keep_low_complexity = lol.keep_low_complexity;
         threshold           = lol.threshold;
+        windows_size        = lol.windows_size;
         bv                  = lol.bv;
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico,  const int keep_low_complexity, int threshold, BooleanVector * bv)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), keep_low_complexity(keep_low_complexity), threshold(threshold), bv(bv) {
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico,  const int keep_low_complexity, int threshold, int windows_size, BooleanVector * bv)
+	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), keep_low_complexity(keep_low_complexity), threshold(threshold), windows_size(windows_size), bv(bv) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -173,13 +178,18 @@ public:
     }
 
 	void operator() (Sequence& seq){
-//		if(not valid_sequence(seq, kmer_size)){return;}
+        int used_windows_size=windows_size;
+        if (windows_size==0 || windows_size>seq.getDataSize()){                                           // if windows size == 0 then we use the full read length as windows
+            used_windows_size=seq.getDataSize();
+        }
         if(not keep_low_complexity and not is_high_complexity(seq,kmer_size)){return;}
 		bool exists;
 		unsigned char count;
 		itKmer->setData (seq.getData());
 		vector<int> values;
-        vector<int> covered_positions;
+//        vector<int> covered_positions; // DEPRECATED [OLD WAY FOR COMPUTING SHARE KMER POSITIONS, FASTER BUT NON IMPLEMENTED WITH WINDOWS SIZE METHODS (max_populated_window)]
+        vector<bool> position_shared =  vector<bool>(seq.getDataSize());
+        for (int pos=0;pos<seq.getDataSize();pos++) position_shared[pos]=false;
         
         int position=0;
 		for (itKmer->first(); !itKmer->isDone(); itKmer->next()){
@@ -188,18 +198,40 @@ public:
                 count=0;
             }
             values.push_back(count);
-            if (count>0) covered_positions.push_back(position);
+//            if (count>0) covered_positions.push_back(position); // DEPRECATED [OLD WAY FOR COMPUTING SHARE KMER POSITIONS, FASTER BUT NON IMPLEMENTED WITH WINDOWS SIZE METHODS (max_populated_window)]
+            if (count>0) {
+                for (int pos=position;pos<position+kmer_size && pos<=seq.getDataSize();pos++) position_shared[pos]=true;
+            }
             position++;
 		}
-        float percentage_shared_positions = 100*number_positions_covered_shared_kmer(covered_positions, seq.getDataSize())/float(seq.getDataSize());
+        
+//        float percentage_shared_positions = 100*number_positions_covered_shared_kmer(covered_positions, seq.getDataSize())/float(seq.getDataSize());  // DEPRECATED [OLD WAY FOR COMPUTING SHARE KMER POSITIONS, FASTER BUT NON IMPLEMENTED WITH WINDOWS SIZE METHODS (max_populated_window)]
+        const int mpw = max_populated_window(position_shared,used_windows_size);
+        const float percentage_span_kmer = 100*mpw/float(used_windows_size);
+        
+//        if (percentage_shared_positions !=percentage_span_kmer){cout<<percentage_shared_positions<< " == " <<percentage_span_kmer<<" ?"<<endl; exit(1);} // TO REMOVE
+        
+        
 		float mean;
 		int median, min, max;
 		if(mean_median_min_max(values, mean, median, min, max)){
 
-			string toPrint (to_string(seq.getIndex())+" "+to_string(mean)+" "+to_string(median)+" "+to_string(min)+" "+to_string(max)+" "+to_string(percentage_shared_positions)+"\n");
+			string toPrint (to_string(seq.getIndex())+" "+to_string(mean)+" "+to_string(median)+" "+to_string(min)+" "+to_string(max)+" "+to_string(percentage_span_kmer));
+            
+//            toPrint.append(" ");
+//            for(int i=0;i<seq.getDataSize() ;i++){
+//                
+//                if (position_shared[i]) {
+//                    toPrint.append("1");
+//                }
+//                else toPrint.append("0");
+//            }
+            
+            toPrint.append("\n");
+
 			synchro->lock();
 			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
-            if (percentage_shared_positions>=threshold) {
+            if (percentage_span_kmer>=threshold) {
                 bv->set(seq.getIndex());
             }
 			synchro->unlock ();
@@ -253,7 +285,7 @@ void SRC_counter::parse_query_sequences (const int nbCores){
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 10000);
-        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity, threshold, &bv));
+        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity, threshold, windows_size, &bv));
         delete synchro;
         std::string query_filename = bank->getId().substr(bank->getId().find_last_of("/\\") + 1);
         cout<<bv.nb_one()<<" reads in out_"+query_filename+"_in_"+bank_filename+".bv"<<endl;
@@ -268,6 +300,7 @@ void SRC_counter::execute (){
     int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
     keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
     gamma_value = getInput()->getInt(STR_GAMMA);
+    windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
     cout<<"gamma value is"<<gamma_value<<endl;
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
