@@ -131,8 +131,13 @@ The first line is the file header. The second line can be decomposed as:
 -   5: maximal number of occurrences of at least a kmer from read 0 in the read
     set *data/c1fasta.gz*
 
--   100.0000: percentage of positions from the query read (here '0') covered by
-    a kmer indexed in the bank.
+-   100.0000: percentage of positions in the best window from the query read
+    (here '0') covered by a kmer indexed in the bank.
+
+Note: it is possible that `percentage_shared_positions` is equal to 100% while
+`min` is equal to 0. This means for instance that at a position `i`, the kmer
+starting at this position is not shared but `i` is covered by a kmer starting at
+another position.
 
  
 

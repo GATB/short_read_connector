@@ -150,7 +150,7 @@ public:
 			if(element>max) max=element;
 		}
 		mean= mean/(float)v.size();
-		size_t n = v.size() / 2;
+		const size_t n = v.size() / 2;
 		nth_element(v.begin(), v.begin()+n, v.end());
 		median=v[n];
 		return true;
@@ -186,9 +186,9 @@ public:
 		bool exists;
 		unsigned char count;
 		itKmer->setData (seq.getData());
-		vector<int> values;
+		vector<int> values;                                                                             // For each position: number of occurrences of the kmer starting at this position.
 //        vector<int> covered_positions; // DEPRECATED [OLD WAY FOR COMPUTING SHARE KMER POSITIONS, FASTER BUT NON IMPLEMENTED WITH WINDOWS SIZE METHODS (max_populated_window)]
-        vector<bool> position_shared =  vector<bool>(seq.getDataSize());
+        vector<bool> position_shared =  vector<bool>(seq.getDataSize());                                // boolean vector. A position is true if it's covered by at least a shared kmer.
         for (int pos=0;pos<seq.getDataSize();pos++) position_shared[pos]=false;
         
         int position=0;
@@ -199,7 +199,7 @@ public:
             }
             values.push_back(count);
 //            if (count>0) covered_positions.push_back(position); // DEPRECATED [OLD WAY FOR COMPUTING SHARE KMER POSITIONS, FASTER BUT NON IMPLEMENTED WITH WINDOWS SIZE METHODS (max_populated_window)]
-            if (count>0) {
+            if (count>0) { // TODO: OPTIMIZABLE.
                 for (int pos=position;pos<position+kmer_size && pos<=seq.getDataSize();pos++) position_shared[pos]=true;
             }
             position++;
@@ -215,7 +215,7 @@ public:
 		float mean;
 		int median, min, max;
 		if(mean_median_min_max(values, mean, median, min, max)){
-
+           
 			string toPrint (to_string(seq.getIndex())+" "+to_string(mean)+" "+to_string(median)+" "+to_string(min)+" "+to_string(max)+" "+to_string(percentage_span_kmer));
             
 //            toPrint.append(" ");
