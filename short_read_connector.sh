@@ -260,7 +260,7 @@ if [ $diskMode -eq 0 ]; then
     else
         # SRC_COUNTER
         cmd="${BIN_DIR}/SRC_counter"
-        threshold_option=""
+        threshold_option="-coverage_threshold ${kmer_threshold}"
     fi
 else
     echo "Disk version not maintained anymore - sorry"
@@ -282,9 +282,9 @@ cmd="${cmd} -graph ${out_dsk}  -bank ${bank_set} -query ${query_set} -out ${resu
 
 
 # adding windows size option in the linker case
-if [ $countMode -eq 0 ]; then
+# if [ $countMode -eq 0 ]; then
     cmd="${cmd} -windows_size ${windows_size}"
-fi
+# fi
 echo ${cmd}
 ${cmd}
 if [ $? -ne 0 ]

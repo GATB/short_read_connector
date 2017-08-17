@@ -25,6 +25,7 @@
 #include "../../../thirdparty/IteratorKmerH5/IteratorKmerH5.hpp"
 #include "../../../thirdparty/quasi_dictionary/src/quasidictionary.h"
 #include <common.hpp>
+#include <boolean_vector.hpp>
 /********************************************************************************/
 
 
@@ -39,7 +40,7 @@ private:
     int gamma_value;
 	static const size_t span = KMER_SPAN(1);
     bool keep_low_complexity;
-
+    int windows_size;     
 public:
 
     // Constructor

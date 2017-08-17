@@ -1,8 +1,7 @@
-| **Linux** | **Mac OSX** |
-|-----------|-------------|
-|           |             |
-[![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/) | [![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/)
-
+| **Linux**                                                                                         | **Mac OSX**                                                                                       |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+|                                                                                                   |                                                                                                   |
+| <https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/> | <https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/> |
 
 <http://www.gnu.org/licenses/agpl-3.0.en.html>
 
@@ -90,7 +89,7 @@ OPTIONS:
    -G value. gamma value. MPHF expert users parameter - Default=2
    -a: kmer abundance min (kmer from seen less than this value both in the bank and in the query are not indexed). Default=2
    -A: with is option, kmers must be present at least \'a\' times in the bank AND in the queries to be indexed.
-   -s: Minimal percentage of shared kmer span for considering 2 reads as similar.    The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved.)
+   -s: Minimal percentage of shared kmer span for considering 2 reads as similar, respectively a query read as similar to a bank with the -c option. The kmer span is the number of bases from the read query covered by a kmer shared with the target read, respectively with the bank. If a read of length 80 has a kmer-span of 60 with another read from the bank (respectively with the bank), then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size" contains at least kmer_threshold percent of positions covered by shared kmers, the read couple is conserved, respectively output in the .bv file.)
    -l: Keep low complexity regions (default false)
    -w: size of the window. If the windows size is zero (default value), then the full read is considered
    -t: number of thread used. Default=0
@@ -101,7 +100,7 @@ OPTIONS:
 Output Format
 -------------
 
-### Short reads counter
+### Short reads counter (with -c option)
 
 Command:
 
@@ -132,12 +131,17 @@ The first line is the file header. The second line can be decomposed as:
 -   5: maximal number of occurrences of at least a kmer from read 0 in the read
     set *data/c1fasta.gz*
 
--   100.0000: percentage of positions from the query read (here '0') covered by
-    a kmer indexed in the bank.
+-   100.0000: percentage of positions in the best window from the query read
+    (here '0') covered by a kmer indexed in the bank.
+
+Note: it is possible that `percentage_shared_positions` is equal to 100% while
+`min` is equal to 0. This means for instance that at a position `i`, the kmer
+starting at this position is not shared but `i` is covered by a kmer starting at
+another position.
 
  
 
-### Short reads linker
+### Short reads linker (without the -c option)
 
 Command:
 
@@ -190,11 +194,11 @@ read file or another file of file(s). Let's look to a few usual cases (italic
 strings indicate the composition of a file):
 
 -   Case1: I've a unique read set composed of a unique read file
-    (`reads.fq.gz`).  `fof.txt` contains` reads.fq.gz `
+    (`reads.fq.gz`). `fof.txt` contains`reads.fq.gz`
 
 -   Case2: I've a unique read set composed of a couple of read files
-    (`reads_R1.fq.gz` and` reads_R2.fq.gz`). This may be the case in case of
-    pair end sequencing. `fof.txt` contains` fof_reads.txt`:
+    (`reads_R1.fq.gz` and`reads_R2.fq.gz`). This may be the case in case of pair
+    end sequencing. `fof.txt` contains`fof_reads.txt`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  with fof_reads.txt:
@@ -219,7 +223,7 @@ reads2.fq.gz
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -   Case4: I've two read sets each composed two read files: `reads1_R1.fq.gz`
-    and `reads1_R2.fq.gz` and `reads2_R1.fq.gz `and` reads2_R2.fq.gz`:
+    and `reads1_R2.fq.gz` and `reads2_R1.fq.gz`and`reads2_R2.fq.gz`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 fof.txt:
@@ -233,7 +237,7 @@ fof_reads1.txt
 fof_reads2.txt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-with` fof_reads1.txt`:
+with`fof_reads1.txt`:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 reads1_R1.fq.gz
