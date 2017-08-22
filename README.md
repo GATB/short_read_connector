@@ -1,10 +1,8 @@
-| **Linux** | **Mac OSX** |
-|-----------|-------------|
-|           |             |
-[![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/) | [![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/)
- 
- 
- 
+| **Linux**                                                                                         | **Mac OSX**                                                                                       |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+|                                                                                                   |                                                                                                   |
+| <https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/> | <https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/> |
+
 <http://www.gnu.org/licenses/agpl-3.0.en.html>
 
 What is Short Read Connector (SRC)?
@@ -76,28 +74,55 @@ Options
 -------
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Usage: sh short_read_connector.sh -b read_file -q read_file_of_files [OPTIONS]
 MANDATORY:
  -b read_files for bank
    Example: -b data/c1.fasta.gz
  -q read_file_of_files for query
    Example: -q data/fof.txt (with fof being a file of file descriptor)
 OPTIONS:
-   -c: use short_read_connector_counter (SRC_counter)
-   -r: with this option (incompatible with SRC_counter), no precision about pair of similar reads is output. Only ids of reads from queries similar to at least one read from bank are output.
-   -p prefix. All out files will start with this prefix. Default="short_read_connector_res"
-   -g: with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed.
-   -k value. Set the length of used kmers. Must fit the compiled value. Default=31
-   -f value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12
-   -G value. gamma value. MPHF expert users parameter - Default=2
-   -a: kmer abundance min (kmer from seen less than this value both in the bank and in the query are not indexed). Default=2
-   -A: with is option, kmers must be present at least \'a\' times in the bank AND in the queries to be indexed.
-   -s: Minimal percentage of shared kmer span for considering 2 reads as similar, respectively a query read as similar to a bank with the -c option. The kmer span is the number of bases from the read query covered by a kmer shared with the target read, respectively with the bank. If a read of length 80 has a kmer-span of 60 with another read from the bank (respectively with the bank), then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size" contains at least kmer_threshold percent of positions covered by shared kmers, the read couple is conserved, respectively output in the .bv file.)
-   -l: Keep low complexity regions (default false)
-   -w: size of the window. If the windows size is zero (default value), then the full read is considered
-   -t: number of thread used. Default=0
-   -d: use disk over RAM (slower and no impact with -c option)
+   -c use short_read_connector_counter (SRC_counter)
+ OPTIONS USING SRC_counter (-c) OR SRC_linker
+   -w <int> window_size. See option -s. If the windows size is zero (default value), then the full read is considered. Default=0
+   -p <string> prefix. All out files will start with this prefix. Default="short_read_connector_res"
+   -g with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed.
+   -k <int> value. Set the length of used kmers. Must fit the compiled value. Default=31
+   -f <int> value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12
+   -G <int> value. gamma value. MPHF expert users parameter - Default=2
+   -a <int> kmer_abundance_min (kmer from bank seen less than this value both in the bank are not indexed). Default=2
+   -l Keep low complexity regions (default false)
+   -t <int> number of thread used. Default=0 (all)
+ OPTIONS USING SRC_counter (-c)
+   -s <int> kmer_threshold: Minimal percentage of shared kmer span for considering a query read as similar to a data set.  
+            The kmer span is the number of bases from the read query covered by a kmer shared with the bank.
+            If a read of length 80 has a kmer-span of 60, then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size") contains at least kmer_threshold percent of positions covered by shared kmers, the read is output.
+ OPTIONS USING SRC_linker (without -c)
+   -s <int> kmer_threshold: Minimal percentage of shared kmer span for considering 2 reads as similar.  
+            The kmer span is the number of bases from the read query covered by a kmer shared with the target read.
+            If a read of length 80 has a kmer-span of 60 with another read (of unkonwn size) from the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size") contains at least kmer_threshold percent of position covered by shared kmers, the read couple is output.
+   -A index kmers present at least 'kmer_abundance_min' times in the bank AND in the queries.
+   -r (incompatible with SRC_counter), do not output precision about pair of similar reads. Only ids of reads from queries similar to at least one read from bank are output.
  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Input read sets
+===============
+
+Short read connector output is composed of two files:
+
+-   A boolean vector file (.bv)
+
+    -   With short read connector **linker** it contains all reads from a query
+        bank that are similar (depending on -s and -w options) to at least a
+        read from the bank
+
+    -   With short read connector **counter** it contains all reads from a query
+        bank that are similar (depending on -s and -w options) to the bank
+
+    In order to obtain the corresponding reads, use the
+    `build/bin/extract_reads_from_bv` executable
+
+-   A text file, as described in the following section.
 
 Output Format
 -------------
@@ -247,6 +272,10 @@ reads1_R2.fq.gz
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 with fof_reads2.txt: \* reads2_R1.fq.gz \* reads2_R2.fq.gz \* and so on...
+
+ 
+
+ 
 
 Contact
 =======
