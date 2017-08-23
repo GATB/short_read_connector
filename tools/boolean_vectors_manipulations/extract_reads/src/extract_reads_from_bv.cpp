@@ -35,7 +35,7 @@ int main (int argc, char* argv[])
 {
     if (argc < 3)
     {
-        cerr << "you must provide an input and output banks names:" << endl;
+        cerr << "you must provide an input bank name, a boolean vector and an output bank name:" << endl;
         cerr << "   1) input read file URI"  << endl;
         cerr << "   2) input boolean vector (.bv) file" << endl;
         cerr << "   3) output URI" << endl;

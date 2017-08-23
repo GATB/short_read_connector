@@ -1,11 +1,9 @@
-
 | **Linux** | **Mac OSX** |
 |-----------|-------------|
 |           |             |
 [![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-debian7-64bits-gcc-4.7/) | [![Build Status](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/badge/icon)](https://ci.inria.fr/gatb-core/view/RConnector/job/tool-rconnector-build-macos-10.9.5-gcc-4.2.1/)
- 
 
-<http://www.gnu.org/licenses/agpl-3.0.en.html>
+[![License](http://img.shields.io/:license-affero-blue.svg)](http://www.gnu.org/licenses/agpl-3.0.en.html)
 
 What is Short Read Connector (SRC)?
 ===================================
@@ -107,24 +105,78 @@ OPTIONS:
  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+ 
+=
+
 Input read sets
 ===============
 
-Short read connector output is composed of two files:
+We use file of files format for query and banks. The input read sets are
+provided using a file of file(s). The file of file(s) contains on each line a
+read file or another file of file(s). Let's look to a few usual cases (italic
+strings indicate the composition of a file):
 
--   A boolean vector file (.bv)
+-   Case1: I've a unique read set composed of a unique read file
+    (`reads.fq.gz`). `fof.txt` contains`reads.fq.gz`
 
-    -   With short read connector **linker** it contains all reads from a query
-        bank that are similar (depending on -s and -w options) to at least a
-        read from the bank
+-   Case2: I've a unique read set composed of a couple of read files
+    (`reads_R1.fq.gz` and`reads_R2.fq.gz`). This may be the case in case of pair
+    end sequencing. `fof.txt` contains`fof_reads.txt`:
 
-    -   With short read connector **counter** it contains all reads from a query
-        bank that are similar (depending on -s and -w options) to the bank
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ with fof_reads.txt:
 
-    In order to obtain the corresponding reads, use the
-    `build/bin/extract_reads_from_bv` executable
+ * reads_R1.fq.gz
+ * reads_R2.fq.gz
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--   A text file, as described in the following section.
+-   Case3: I've two read sets each composed of a unique read file:
+    `reads1.fq.gz` and `reads2.fq.gz`:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fof.txt:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+reads1.fq.gz
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+reads2.fq.gz
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-   Case4: I've two read sets each composed two read files: `reads1_R1.fq.gz`
+    and `reads1_R2.fq.gz` and `reads2_R1.fq.gz`and`reads2_R2.fq.gz`:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fof.txt:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fof_reads1.txt
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fof_reads2.txt
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with`fof_reads1.txt`:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+reads1_R1.fq.gz
+reads1_R2.fq.gz
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+with fof_reads2.txt: \* reads2_R1.fq.gz \* reads2_R2.fq.gz \* and so on...
+
+ 
+
+Output
+======
+
+Short read connector output a text file, as described in the following section.
+
+This text file can be downstream exploited as described section "Back to reads"
 
 Output Format
 -------------
@@ -212,70 +264,29 @@ output. In this example the line would be limited to
  0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- 
+Back to reads 
+--------------
 
-Input read sets
----------------
+Using the short read connector output, it is possible to select reads from the
+query file that meets user defined requirements. It is done using two
+executables: `generate_bv` and `extract_reads_from_bv`.
 
-We use file of files format for query and banks. The input read sets are
-provided using a file of file(s). The file of file(s) contains on each line a
-read file or another file of file(s). Let's look to a few usual cases (italic
-strings indicate the composition of a file):
+-   `generate_bv` extract query reads whose similarity with the bank is higher
+    than a user defined threshold. Its takes as input a short read connector
+    output (counter or linker), a percentage threshold and it generates a
+    boolean vector (.bv file) containing a readable comment and a compressed 0/1
+    vector. 0 designs reads the do not meet the similarity threshold and *vice
+    versa.*
 
--   Case1: I've a unique read set composed of a unique read file
-    (`reads.fq.gz`). `fof.txt` contains`reads.fq.gz`
+    -   With short read connector **linker** it contains all reads from a query
+        bank that are similar (depending on -s and -w options) to **at least** a
+        read from the bank
 
--   Case2: I've a unique read set composed of a couple of read files
-    (`reads_R1.fq.gz` and`reads_R2.fq.gz`). This may be the case in case of pair
-    end sequencing. `fof.txt` contains`fof_reads.txt`:
+    -   With short read connector **counter** it contains all reads from a query
+        bank that are similar (depending on -s and -w options) to the bank
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- with fof_reads.txt:
-
- * reads_R1.fq.gz
- * reads_R2.fq.gz
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--   Case3: I've two read sets each composed of a unique read file:
-    `reads1.fq.gz` and `reads2.fq.gz`:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fof.txt:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-reads1.fq.gz
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-reads2.fq.gz
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--   Case4: I've two read sets each composed two read files: `reads1_R1.fq.gz`
-    and `reads1_R2.fq.gz` and `reads2_R1.fq.gz`and`reads2_R2.fq.gz`:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fof.txt:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fof_reads1.txt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fof_reads2.txt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-with`fof_reads1.txt`:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-reads1_R1.fq.gz
-reads1_R2.fq.gz
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-with fof_reads2.txt: \* reads2_R1.fq.gz \* reads2_R2.fq.gz \* and so on...
-
- 
+-   `extract_reads_from_bv` takes as input a read set and a related .bv file and
+    outputs the reads corresponding to ones in the .bv file.
 
  
 

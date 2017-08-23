@@ -53,7 +53,7 @@ struct FunctorIndexer
 
 
 void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const int nbCores){
-	const int display = getInput()->getInt (STR_VERBOSE);
+//	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
 	auto_ptr<Storage> storage (StorageFactory(STORAGE_HDF5).load (getInput()->getStr(STR_URI_GRAPH)));
@@ -97,7 +97,7 @@ public:
     bool keep_low_complexity;
     int threshold;
     int windows_size;
-    BooleanVector* bv;
+//    BooleanVector* bv;
 
 	FunctorQuery(const FunctorQuery& lol)
 	{
@@ -111,12 +111,12 @@ public:
         keep_low_complexity = lol.keep_low_complexity;
         threshold           = lol.threshold;
         windows_size        = lol.windows_size;
-        bv                  = lol.bv;
+//        bv                  = lol.bv;
 	}
 
 
-	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico,  const int keep_low_complexity, int threshold, int windows_size, BooleanVector * bv)
-	: synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), keep_low_complexity(keep_low_complexity), threshold(threshold), windows_size(windows_size), bv(bv) {
+	FunctorQuery (ISynchronizer* synchro, FILE* outFile,  const int kmer_size,  quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >* quasiDico,  const int keep_low_complexity, int threshold, int windows_size)//, BooleanVector * bv)
+    : synchro(synchro), outFile(outFile), kmer_size(kmer_size), quasiDico(quasiDico), keep_low_complexity(keep_low_complexity), threshold(threshold), windows_size(windows_size){//, bv(bv) {
 		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
 		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
 	}
@@ -232,7 +232,7 @@ public:
 			synchro->lock();
 			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
             if (percentage_span_kmer>=threshold) {
-                bv->set(seq.getIndex());
+//                bv->set(seq.getIndex());
             }
 			synchro->unlock ();
 		}
@@ -274,10 +274,10 @@ void SRC_counter::parse_query_sequences (const int nbCores){
         
         IBank* bank=banks_of_queries[bank_id];
         LOCAL (bank);
-        BooleanVector bv;
-        unsigned long bank_size = get_bank_nb_items(bank);
-        bv.init_false(bank_size); // quick and dirty. Todo: implement a realocation of the bv in case the estimation is too low.
-        bv.set_comment(string("Reads from "+bank->getId()+" in "+getInput()->getStr(STR_URI_BANK_INPUT)+" with threshold "+to_string(threshold)));
+//        BooleanVector bv;
+//        unsigned long bank_size = get_bank_nb_items(bank);
+//        bv.init_false(bank_size); // quick and dirty. Todo: implement a realocation of the bv in case the estimation is too low.
+//        bv.set_comment(string("Reads from "+bank->getId()+" in "+getInput()->getStr(STR_URI_BANK_INPUT)+" with threshold "+to_string(threshold)));
         
         string message("#query_read_id (from bank "+bank->getId()+") mean median min max percentage_shared_positions -- number of shared "+to_string(kmer_size)+"mers with banq "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
         fwrite((message).c_str(), sizeof(char), message.size(), pFile);
@@ -285,11 +285,11 @@ void SRC_counter::parse_query_sequences (const int nbCores){
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
         ISynchronizer* synchro = System::thread().newSynchronizer();
         Dispatcher dispatcher (nbCores, 10000);
-        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity, threshold, windows_size, &bv));
+        dispatcher.iterate (itSeq, FunctorQuery(synchro,pFile, kmer_size,&quasiDico, keep_low_complexity, threshold, windows_size));//, &bv));
         delete synchro;
         std::string query_filename = bank->getId().substr(bank->getId().find_last_of("/\\") + 1);
-        cout<<bv.nb_one()<<" reads in out_"+query_filename+"_in_"+bank_filename+".bv"<<endl;
-        bv.print("out_"+query_filename+"_in_"+bank_filename+".bv");
+//        cout<<bv.nb_one()<<" reads in out_"+query_filename+"_in_"+bank_filename+".bv"<<endl;
+//        bv.print("out_"+query_filename+"_in_"+bank_filename+".bv");
     }
     fclose (pFile);
 }
