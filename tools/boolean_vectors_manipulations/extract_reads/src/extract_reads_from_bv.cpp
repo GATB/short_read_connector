@@ -27,6 +27,13 @@ struct FilterFunctor
     }
     bool operator ()  (Sequence& seq)
     {
+//        if (bv.is_set(seq.getIndex())){
+//            cout<<"OK "<<seq.getIndex()<<endl;
+//        }
+//        else{
+//            cout<<"KO "<<seq.getIndex()<<endl;
+//        }
+
         return (bv.is_set(seq.getIndex()));
     }
 };

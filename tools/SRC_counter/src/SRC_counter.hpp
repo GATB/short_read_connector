@@ -36,11 +36,14 @@ class SRC_counter : public Tool
 private:
 	quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char > quasiDico;
 	u_int64_t nbSolidKmers;
+    int nbCores;
+    int fingerprint_size;
 	int kmer_size;
     int gamma_value;
 	static const size_t span = KMER_SPAN(1);
     bool keep_low_complexity;
-    int windows_size;     
+    int windows_size;
+    int threshold;
 public:
 
     // Constructor
@@ -49,10 +52,10 @@ public:
     // Actual job done by the tool is here
     void execute ();
 
-    void create_and_fill_quasi_dictionary (int fingerprint_size, const int nbCores);
+    void create_and_fill_quasi_dictionary ();
 
 
-    void parse_query_sequences(const int nbCores);
+    void parse_query_sequences();
 };
 
 /********************************************************************************/

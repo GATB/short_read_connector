@@ -52,7 +52,7 @@ struct FunctorIndexer
 };
 
 
-void SRC_counter::create_and_fill_quasi_dictionary (int fingerprint_size, const int nbCores){
+void SRC_counter::create_and_fill_quasi_dictionary (){
 //	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
@@ -229,10 +229,12 @@ public:
             
             toPrint.append("\n");
 
-			synchro->lock();
-			fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
             if (percentage_span_kmer>=threshold) {
-//                bv->set(seq.getIndex());
+                synchro->lock();
+                //                bv->set(seq.getIndex());
+                fwrite(toPrint.c_str(), sizeof(char), toPrint.size(), outFile);
+                synchro->unlock ();
+
             }
 			synchro->unlock ();
 		}
@@ -258,7 +260,7 @@ unsigned long get_bank_nb_items(IBank* bank){
     return size;
 }
 
-void SRC_counter::parse_query_sequences (const int nbCores){
+void SRC_counter::parse_query_sequences (){
     std::string bank_filename = getInput()->getStr(STR_URI_BANK_INPUT).substr(getInput()->getStr(STR_URI_BANK_INPUT).find_last_of("/\\") + 1);
 
     BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
@@ -268,7 +270,7 @@ void SRC_counter::parse_query_sequences (const int nbCores){
 	FILE * pFile;
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
     
-    int threshold = getInput()->getInt(STR_THRESHOLD);
+    
 	cout<<"Query "<<kmer_size<<"-mers from "<<getInput()->getStr(STR_URI_QUERY_INPUT)<<endl;
     for( int bank_id=0;bank_id<number_of_read_sets;bank_id++){ // iterate each bank
         
@@ -296,11 +298,12 @@ void SRC_counter::parse_query_sequences (const int nbCores){
 
 
 void SRC_counter::execute (){
-	int nbCores = getInput()->getInt(STR_CORE);
-    int fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
+	nbCores = getInput()->getInt(STR_CORE);
+    fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
     keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
     gamma_value = getInput()->getInt(STR_GAMMA);
     windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
+    threshold = getInput()->getInt(STR_THRESHOLD);
     cout<<"gamma value is"<<gamma_value<<endl;
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
@@ -311,15 +314,18 @@ void SRC_counter::execute (){
 	//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
 	//		fingerprint_size=0;
 	cout<<"fingerprint = "<<fingerprint_size<<endl;
-	create_and_fill_quasi_dictionary(fingerprint_size, nbCores);
+	create_and_fill_quasi_dictionary();
 
-	parse_query_sequences(nbCores);
+	parse_query_sequences();
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
 	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
 	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
     getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
+    getInfo()->add (2, "windows_size", "%d", windows_size);
+    getInfo()->add (2, "Minimal kmer span percentage", "%d", threshold);
+    
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
     if(keep_low_complexity)

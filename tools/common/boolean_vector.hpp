@@ -211,6 +211,8 @@ public:
     //
     char is_set (const unsigned long & i) const
     {
+//        std::cout<<"i "<<i<<" bvsize "<<boolean_vector_size<<"\n";
+        if (i>boolean_vector_size) return 0;
         return (boolean_vector[i / 8] & mask[i % 8]);
     }
     
@@ -293,7 +295,7 @@ public:
     {
         // Prepare comment + size
         std::stringstream tmp_str;
-        tmp_str << comment << "\n#" << boolean_vector_size << "\n";
+        tmp_str << comment << "#" << boolean_vector_size << "\n";
         
         // Open file for writing
         int fd = open (file_name.c_str(), O_RDWR | O_CREAT | O_TRUNC, (mode_t) 0600);
@@ -362,6 +364,7 @@ public:
             close(fd);
             exit(1);
         }
+//        std::cout<<"map "<<map<<std::endl; //DEBUG
         // If the boolean vector was already allocated, erase data
         if (boolean_vector != NULL) {
             free(boolean_vector);
@@ -377,6 +380,7 @@ public:
         }
         i++;
         comment = comment.substr(0, comment.size() - 1);
+//        std::cout<<"comment "<<comment<<std::endl; //DEBUG
         std::string tmp_str;
         while (map[i] != '\n' && i < sb.st_size) {
             tmp_str += map[i];
@@ -389,6 +393,7 @@ public:
         }
         unsigned long size = atoi(tmp_str.c_str());
         // Allocate memory for the boolean vector
+//        std::cout<<"read bv size "<<size<<std::endl; //DEBUG
         init_false (size);
         
         // Directly copy the boolean vector

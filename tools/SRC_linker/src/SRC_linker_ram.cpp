@@ -41,7 +41,7 @@ SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
 }
 
 
-void SRC_linker_ram::create_quasi_dictionary (int fingerprint_size, int nbCores){
+void SRC_linker_ram::create_quasi_dictionary (){
 	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
@@ -92,7 +92,7 @@ struct FunctorIndexer{
 };
 
 
-void SRC_linker_ram::fill_quasi_dictionary (const int nbCores){
+void SRC_linker_ram::fill_quasi_dictionary (){
 	bool exists;
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));
 	cout<<"Index "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
@@ -319,7 +319,7 @@ private:
 };
 
 
-void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, const int windows_size, const bool commet_like){
+void SRC_linker_ram::parse_query_sequences (){
     BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
     const std::vector<IBank*>& banks_of_queries = banks.getBanks();
     const int number_of_read_sets = banks_of_queries.size();
@@ -373,8 +373,8 @@ void SRC_linker_ram::parse_query_sequences (int threshold, const int nbCores, co
 
 void SRC_linker_ram::execute (){
     
-	int nbCores                     = getInput()->getInt(STR_CORE);
-	int fingerprint_size            = getInput()->getInt(STR_FINGERPRINT);
+	nbCores                     = getInput()->getInt(STR_CORE);
+	fingerprint_size            = getInput()->getInt(STR_FINGERPRINT);
     gamma_value                     = getInput()->getInt(STR_GAMMA);
     zero_density_windows_size       = getInput()->getInt(STR_ZERO_DENSITY_WINDOWS_SIZE);
     zero_density_threshold          = getInput()->getInt(STR_ZERO_DENSITY_THRESHOLD);
@@ -387,21 +387,21 @@ void SRC_linker_ram::execute (){
 	//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
 	//		fingerprint_size=0;
 
-    int threshold            = getInput()->getInt(STR_THRESHOLD);
-    int windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
-    bool commet_like         = getInput()->get(STR_COMMET_LIKE)>0?true:false;
+    threshold            = getInput()->getInt(STR_THRESHOLD);
+    windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
+    commet_like         = getInput()->get(STR_COMMET_LIKE)>0?true:false;
     keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
-	create_quasi_dictionary(fingerprint_size, nbCores);
-	fill_quasi_dictionary(nbCores);
+	create_quasi_dictionary();
+	fill_quasi_dictionary();
 
-	parse_query_sequences(threshold, nbCores, windows_size, commet_like);
+	parse_query_sequences();
 
 	getInfo()->add (1, &LibraryInfo::getInfo());
 	getInfo()->add (1, "input");
 	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
     getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
-    getInfo()->add (2, "windows_size size",  "%d",  windows_size);
     getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
+    getInfo()->add (2, "windows_size size",  "%d",  windows_size);
 	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
     getInfo()->add (2, "gamma",  "%d",  gamma_value);
 	getInfo()->add (2, "Minimal kmer span percentage",  "%d",  threshold);
@@ -414,4 +414,8 @@ void SRC_linker_ram::execute (){
     if (commet_like)
         getInfo()->add (2, "Output only ids of read shared (no complete links)");
 	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
+    
+    
+    
+    
 }

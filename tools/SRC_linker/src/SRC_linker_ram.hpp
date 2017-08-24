@@ -43,6 +43,11 @@ class SRC_linker_ram : public Tool
 	
 private:
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > quasiDico;
+    int nbCores;
+    int fingerprint_size;
+    int threshold;
+    int windows_size;
+    bool commet_like;
 	u_int64_t nbSolidKmers;
     int gamma_value;
 	int kmer_size;
@@ -59,12 +64,12 @@ public:
     // Actual job done by the tool is here
     void execute ();
 
-    void create_quasi_dictionary(int fingerprint_size, int nbCores);
+    void create_quasi_dictionary();
 
-    void fill_quasi_dictionary(const int nbCores);
+    void fill_quasi_dictionary();
     
 
-    void parse_query_sequences(int threshold, const int nbCores, const int windows_size, const bool commet_like);
+    void parse_query_sequences();
 };
 
 /********************************************************************************/
