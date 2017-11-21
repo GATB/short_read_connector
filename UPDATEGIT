@@ -1,0 +1,12 @@
+
+# Prepare sub-modules
+git submodule init
+git submodule update
+
+cd thirdparty/quasi_dictionary/
+git pull origin master
+cd -
+cd thirdparty/quasi_dictionary/BooPHF/
+git pull origin master
+cd -
+
