@@ -64,44 +64,45 @@ Usage
 Mimimal call
 ------------
 
-Calling SRC_linker between read sets *bank* and *query*:
+Calling SRC_linker between read sets *bank* and *query*:  
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-sh short_read_connector.sh -b bank -q query
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+sh short_read_connector.sh -b bank -q query  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
 
 Options
 -------
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Usage: sh short_read_connector.sh -b read_file -q read_file_of_files [OPTIONS]
-MANDATORY:
- -b read_files for bank
-   Example: -b data/c1.fasta.gz
- -q read_file_of_files for query
-   Example: -q data/fof.txt (with fof being a file of file descriptor)
-OPTIONS:
-   -c use short_read_connector_counter (SRC_counter)
- OPTIONS USING SRC_counter (-c) OR SRC_linker
-   -w <int> window_size. See option -s. If the windows size is zero (default value), then the full read is considered. Default=0
-   -p <string> prefix. All out files will start with this prefix. Default="short_read_connector_res"
-   -g with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed.
-   -k <int> value. Set the length of used kmers. Must fit the compiled value. Default=31
-   -f <int> value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12
-   -G <int> value. gamma value. MPHF expert users parameter - Default=2
-   -a <int> kmer_abundance_min (kmer from bank seen less than this value both in the bank are not indexed). Default=2
-   -l Keep low complexity regions (default false)
-   -t <int> number of thread used. Default=0 (all)
- OPTIONS USING SRC_counter (-c)
-   -s <int> kmer_threshold: Minimal percentage of shared kmer span for considering a query read as similar to a data set.  
-            The kmer span is the number of bases from the read query covered by a kmer shared with the bank.
-            If a read of length 80 has a kmer-span of 60, then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size") contains at least kmer_threshold percent of positions covered by shared kmers, the read is output.
- OPTIONS USING SRC_linker (without -c)
-   -s <int> kmer_threshold: Minimal percentage of shared kmer span for considering 2 reads as similar.  
+
+Usage: `sh short_read_connector.sh -b read_file -q read_file_of_files [OPTIONS]`  
+MANDATORY:   
+ `-b read_files` for bank  
+   Example: -b data/c1.fasta.gz  
+ `-q read_file_of_files` for query  
+   Example: `-q data/fof.txt` (with fof being a file of file descriptor)  
+OPTIONS:  
+   `-c` use short_read_connector_counter (SRC_counter)  
+ OPTIONS USING SRC_counter (-c) OR SRC_linker  
+   `-w` <int> window_size. See option -s. If the windows size is zero (default value), then the full read is considered. Default=0  
+   `-p` <string> prefix. All out files will start with this prefix. Default="short_read_connector_res"  
+   `-g` with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed.  
+   `-k <int>` value. Set the length of used kmers. Must fit the compiled value. Default=31  
+   `-f <int>` value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives.   Default=12  
+   `-G <int>` value. gamma value. MPHF expert users parameter - Default=2  
+   `-a <int>` kmer_abundance_min (kmer from bank seen less than this value both in the bank are not indexed). Default=2  
+   `-l` Keep low complexity regions (default false)  
+   `-t <int>` number of thread used. Default=0 (all)  
+ OPTIONS USING SRC_counter (-c)  
+   `-s <int> kmer_threshold`: Minimal percentage of shared kmer span for considering a query read as similar to a data set.   
+            The kmer span is the number of bases from the read query covered by a kmer shared with the bank.   
+            If a read of length 80 has a kmer-span of 60, then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size") contains at least kmer_threshold percent of positions covered by shared kmers, the read is output.  
+ OPTIONS USING SRC_linker (without -c)  
+   `-s <int> kmer_threshold`: Minimal percentage of shared kmer span for considering 2 reads as similar.   
             The kmer span is the number of bases from the read query covered by a kmer shared with the target read.
-            If a read of length 80 has a kmer-span of 60 with another read (of unkonwn size) from the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size") contains at least kmer_threshold percent of position covered by shared kmers, the read couple is output.
-   -A index kmers present at least 'kmer_abundance_min' times in the bank AND in the queries.
-   -r (incompatible with SRC_counter), do not output precision about pair of similar reads. Only ids of reads from queries similar to at least one read from bank are output.
+            If a read of length 80 has a kmer-span of 60 with another read (of unkonwn size) from the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size "windows_size") contains at least kmer_threshold percent of position covered by shared kmers, the read couple is output.  
+   `-A` index kmers present at least 'kmer_abundance_min' times in the bank AND in the queries.  
+   `-r` (incompatible with SRC_counter), do not output precision about pair of similar reads. Only ids of reads from queries similar to at least one read from bank are output. 
  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -260,8 +261,8 @@ Note that with the -r option, only the id of the queried and shared read is
 output. In this example the line would be limited to
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- #query_read_id 
- 0
+`#query_read_id 
+0`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Back to reads 
@@ -293,4 +294,4 @@ executables: `generate_bv` and `extract_reads_from_bv`.
 Contact
 =======
 
-Contact: Pierre Peterlongo: pierre.peterlongo\@inria.fr
+Contact: Pierre Peterlongo: pierre.peterlongo@inria.fr

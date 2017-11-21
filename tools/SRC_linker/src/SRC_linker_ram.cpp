@@ -42,7 +42,7 @@ SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
 
 
 void SRC_linker_ram::create_quasi_dictionary (){
-	const int display = getInput()->getInt (STR_VERBOSE);
+//	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
 	auto_ptr<Storage> storage (StorageFactory(STORAGE_HDF5).load (getInput()->getStr(STR_URI_GRAPH)));
@@ -93,7 +93,6 @@ struct FunctorIndexer{
 
 
 void SRC_linker_ram::fill_quasi_dictionary (){
-	bool exists;
 	IBank* bank = Bank::open (getInput()->getStr(STR_URI_BANK_INPUT));
 	cout<<"Index "<<kmer_size<<"-mers from bank "<<getInput()->getStr(STR_URI_BANK_INPUT)<<endl;
 	LOCAL (bank);
@@ -170,7 +169,9 @@ public:
 	}
     
 	void operator() (Sequence& seq){
-        bool optimization_dont_check_all=false;                         // TODO CREATE AN OPTION IF WE KEEP THIS FEATURE
+        bool optimization_dont_check_all    =false;                         // TODO CREATE AN OPTION IF WE KEEP THIS FEATURE
+        bool at_least_one_kmer              =false;                         // two sequences are similar if they share at least one kmer
+        if (threshold<=0)   at_least_one_kmer=true;
         std::unordered_set<u_int32_t>                                             similar_read_ids ; // conserve read ids that share enought similarity
         
         
@@ -189,6 +190,11 @@ public:
 			quasiDico->get_value((*itKmer)->value().getVal(),exists,associated_read_ids);
 			if(!exists) {++i;continue;}
 			for(auto &read_id: associated_read_ids){
+                if (at_least_one_kmer){
+                    similar_read_ids.insert(read_id);
+                    
+                    continue;
+                }
 				std::unordered_map<u_int32_t, vector<bool>>::const_iterator element = similar_read_ids_position.find(read_id);
                 vector<bool> position_shared;
 				if(element == similar_read_ids_position.end()) {// not inserted yet create an empty vector
@@ -220,7 +226,7 @@ public:
             ++i;
 		}
         
-        if (optimization_dont_check_all){
+        if (optimization_dont_check_all or at_least_one_kmer){
             print_read_similarities_dont_check_all (seq,  similar_read_ids);
         }
         else{

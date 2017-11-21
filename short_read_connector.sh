@@ -59,6 +59,7 @@ function help {
     echo  "   -s <int> kmer_threshold: Minimal percentage of shared kmer span for considering 2 reads as similar.  "
     echo  "            The kmer span is the number of bases from the read query covered by a kmer shared with the target read."
     echo  "            If a read of length 80 has a kmer-span of 60 with another read (of unkonwn size) from the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\") contains at least kmer_threshold percent of position covered by shared kmers, the read couple is output."
+    echo  "                 TRICK: with kmer_threshold<=0 a single kmer is sufficient in the linker mode to link two reads. "
     echo  "   -A index kmers present at least 'kmer_abundance_min' times in the bank AND in the queries."
     echo  "   -r (incompatible with SRC_counter), do not output precision about pair of similar reads. Only ids of reads from queries similar to at least one read from bank are output."
 }
