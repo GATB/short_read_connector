@@ -174,7 +174,6 @@ public:
         if (threshold<=0)   at_least_one_kmer=true;
         std::unordered_set<u_int32_t>                                             similar_read_ids ; // conserve read ids that share enought similarity
         
-        
         int used_windows_size=windows_size;
         if (windows_size==0 || windows_size>seq.getDataSize()){                                           // if windows size == 0 then we use the full read length as windows
             used_windows_size=seq.getDataSize();
@@ -234,6 +233,7 @@ public:
             else                print_read_similarities             (seq, used_windows_size, similar_read_ids_position);
         }
     }
+    
 private:
     void print_read_similarities_dont_check_all (Sequence&  seq,  std::unordered_set<u_int32_t> similar_read_ids ){
         if (similar_read_ids.empty()) return;
@@ -395,8 +395,9 @@ void SRC_linker_ram::execute (){
 
     threshold            = getInput()->getInt(STR_THRESHOLD);
     windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
-    commet_like         = getInput()->get(STR_COMMET_LIKE)>0?true:false;
-    keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
+    commet_like         = getInput()->get(STR_COMMET_LIKE)?true:false;
+    keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)?true:false;
+    cout<<"keep_low_complexity "<<keep_low_complexity<<endl;
 	create_quasi_dictionary();
 	fill_quasi_dictionary();
 

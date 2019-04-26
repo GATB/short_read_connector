@@ -300,7 +300,7 @@ void SRC_counter::parse_query_sequences (){
 void SRC_counter::execute (){
 	nbCores = getInput()->getInt(STR_CORE);
     fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
-    keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)>0?true:false;
+    keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)?true:false;
     gamma_value = getInput()->getInt(STR_GAMMA);
     windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
     threshold = getInput()->getInt(STR_THRESHOLD);
