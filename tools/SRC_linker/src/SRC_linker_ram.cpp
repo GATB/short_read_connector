@@ -65,19 +65,19 @@ struct FunctorIndexer{
 	quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t > &quasiDico;
 	int                                                                 kmer_size;
     bool                                                                keep_low_complexity;
-    Kmer<KMER_SPAN(1)>::ModelCanonical                                  model;
+    Kmer<KMER_SPAN(2)>::ModelCanonical                                  model;
 
     FunctorIndexer(quasidictionaryVectorKeyGeneric <IteratorKmerH5Wrapper, u_int32_t >& quasiDico, int kmer_size, bool keep_low_complexity)  :
         quasiDico(quasiDico),
         kmer_size(kmer_size),
         keep_low_complexity(keep_low_complexity) {
-        model = Kmer<KMER_SPAN(1)>::ModelCanonical(kmer_size);
+        model = Kmer<KMER_SPAN(2)>::ModelCanonical(kmer_size);
 	}
 
 	void operator() (Sequence& seq){
 //        read_id++;          // we do not use the seq.getIndex() id as it is limited to a read file and not a read set.
 		if(not keep_low_complexity and not is_high_complexity(seq,kmer_size)){return;}
-        Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator itKmer (model);
+        Kmer<KMER_SPAN(2)>::ModelCanonical::Iterator itKmer (model);
 		itKmer.setData (seq.getData());
         
 //        if(repeated_kmers(model, itKmer)){return;}
@@ -114,8 +114,8 @@ public:
     int                                                                 windows_size;
     bool                                                                commet_like;
 	vector<u_int32_t>                                                   associated_read_ids;
-    Kmer<KMER_SPAN(1)>::ModelCanonical                                  model;
-	Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator*                       itKmer;
+    Kmer<KMER_SPAN(2)>::ModelCanonical                                  model;
+	Kmer<KMER_SPAN(2)>::ModelCanonical::Iterator*                       itKmer;
     int                                                                 zero_density_windows_size;
     int                                                                 zero_density_threshold;
     bool                                                                keep_low_complexity;
@@ -131,7 +131,7 @@ public:
 		associated_read_ids         =   lol.associated_read_ids;
 		model                       =   lol.model;
         commet_like                 =   lol.commet_like;
-		itKmer                      =   new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+		itKmer                      =   new Kmer<KMER_SPAN(2)>::ModelCanonical::Iterator (model);
         zero_density_windows_size   =   lol.zero_density_windows_size;
         zero_density_threshold      =   lol.zero_density_threshold;
         keep_low_complexity         =   lol.keep_low_complexity;
@@ -161,8 +161,8 @@ public:
     zero_density_threshold      (zero_density_threshold),
     keep_low_complexity         (keep_low_complexity)
     {
-		model=Kmer<KMER_SPAN(1)>::ModelCanonical (kmer_size);
-		// itKmer = new Kmer<KMER_SPAN(1)>::ModelCanonical::Iterator (model);
+		model=Kmer<KMER_SPAN(2)>::ModelCanonical (kmer_size);
+		// itKmer = new Kmer<KMER_SPAN(2)>::ModelCanonical::Iterator (model);
 	}
     
 	FunctorQuerySpanKmers () {

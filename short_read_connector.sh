@@ -42,7 +42,7 @@ function help {
     echo  "   -w <int> window_size. See option -s. If the windows size is zero (default value), then the full read is considered. Default=0"
     echo  "   -p <string> prefix. All out files will start with this prefix. Default=\"short_read_connector_res\""
     echo  "   -g with this option, if a file of solid kmer exists with same prefix name and same k value, then it is re-used and not re-computed."
-    echo  "   -k <int> value. Set the length of used kmers. Must fit the compiled value. Default=31"
+    echo  "   -k <int> value (<32). Set the length of used kmers. Must fit the compiled value. Default=31"
     echo  "   -f <int> value. Fingerprint size. Size of the key associated to each indexed value, limiting false positives. Default=12"
     echo  "   -G <int> value. gamma value. MPHF expert users parameter - Default=2"
     echo  "   -a <int> kmer_abundance_min (kmer from bank seen less than this value both in the bank are not indexed). Default=2"
@@ -155,8 +155,12 @@ while getopts "hgb:q:p:k:a:s:t:f:G:w:dcrlA" opt; do
         ;;
 
     k)
-        echo "use k=$OPTARG" >&2
         kmer_size=$OPTARG
+        if [ $kmer_size -gt 31 ]; then
+            echo "ERROR, kmer size must be <32. Please choose a lower k value"
+            exit 1
+        fi
+        echo "use k=$OPTARG" >&2
         ;;
 
 
