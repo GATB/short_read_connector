@@ -408,7 +408,7 @@ void SRC_linker::parse_query_sequences (){
 }
 
 void SRC_linker::load_quasi_dictionary(std::string dumped_file_name){
-    std::ifstream is = std::ifstream(dumped_file_name, std::ios_base::binary); 
+    std::ifstream is(dumped_file_name, std::ios_base::binary); 
     is.read(reinterpret_cast<char*>(&this->kmer_size), sizeof(this->kmer_size));
     quasiDico = quasidictionaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t>();
     quasiDico.load(is);
@@ -417,7 +417,7 @@ void SRC_linker::load_quasi_dictionary(std::string dumped_file_name){
 
 
 void SRC_linker::write_quasi_dictionary(std::string dumped_file_name){
-    std::ofstream os = std::ofstream(dumped_file_name, std::ios_base::binary); 
+    std::ofstream os(dumped_file_name, std::ios_base::binary); 
     os.write(reinterpret_cast<char const*>(&this->kmer_size), sizeof(this->kmer_size));
     quasiDico.save(os);
 }
