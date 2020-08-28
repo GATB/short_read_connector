@@ -17,7 +17,7 @@
 *****************************************************************************/
 
 // We include the header file for the tool
-#include <SRC_linker_ram.hpp>
+#include <SRC_linker.hpp>
 
 /********************************************************************************/
 
@@ -26,7 +26,7 @@ int main (int argc, char* argv[])
     try
     {
         // We run the tool with the provided command line arguments.
-    	SRC_linker_ram().run (argc, argv);
+    	SRC_linker().run (argc, argv);
     }
     catch (Exception& e)
     {

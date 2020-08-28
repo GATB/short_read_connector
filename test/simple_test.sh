@@ -58,44 +58,16 @@ echo "*** DIFF LINKER WITHOUT LINKS OK ***"
 
 
 ##########################################################
-## TEST DISK LINKER --> UNAVAILABLE FOR NOW
-##########################################################
-
-# # RUN SRC
-# bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q ../data/c2.fasta.gz -d -p linker_disk
-# if [ $? -ne 0 ] ; then
-#   echo "*** Test: FAILURE on linker_disk"
-#   exit 1
-# fi
-#
-# # UNIFORMIZE RESULTS
-# python ../scripts/uniformize_SRC_linker_output.py linker_disk.txt > linker_disk_uniform.txt
-# if [ $? -ne 0 ] ; then
-#   echo "*** Test: FAILURE on uniformisator"
-#   exit 1
-# fi
-#
-# # SORT RESULTS
-# sort -n linker_disk_uniform.txt > linker_disk_sorted.txt
-# if [ $? -ne 0 ] ; then
-#   echo "*** Test: FAILURE on sorting linker_disk"
-#   exit 1
-# fi
-#
-# # CHECK EQUALITY
-# diff linker_disk_sorted.txt ref_linker_sorted.txt
-# if [ $? -ne 0 ] ; then
-#   echo "*** Test: FAILURE on diff linker_disk"
-#   exit 1
-# fi
-
-
-##########################################################
 ## TEST COUNTER
 ##########################################################
 
 # RUN SRC
-bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -c -p counter -t 1 > log_counter 2>log_counter_err
+
+# Create the index
+(bash ../short_read_connector_counter.sh index -b ../data/c1.fasta.gz -i index_counter.dumped -t 1)> log_counter 2> log_counter_err
+# Permorf queries
+(bash  ../short_read_connector_counter.sh query -i index_counter.dumped -q fof.txt -p counter -t 1)>> log_counter 2>> log_counter_err
+
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on counter ***"
   exit 1

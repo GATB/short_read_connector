@@ -8,7 +8,8 @@ using namespace std;
 
 
 // We define some constant strings for names of command line parameters
-static const char* STR_URI_BANK_INPUT               = "-bank";
+static const char* STR_MAKE_INDEX                   = "-make_index";
+static const char* STR_DUMPED_QD_FILE_NAME          = "-dumped_quasi_dict";
 static const char* STR_URI_QUERY_INPUT              = "-query";
 static const char* STR_FINGERPRINT                  = "-fingerprint_size";
 static const char* STR_GAMMA                        = "-gamma";
@@ -20,19 +21,25 @@ static const char* STR_WINDOWS_SIZE                 = "-windows_size";
 
 
 SRC_counter::SRC_counter ()  : Tool ("SRC_counter"){
-	// We add some custom arguments for command line interface
-	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH,          "graph input",   true));
-	//getParser()->push_back (new OptionOneParam (STR_VERBOSE,   "verbosity (0:no display, 1: display kmers, 2: display distrib",  false, "0"));
-	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT,     "bank input",    true));
-	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT,    "query input",    true));
-	getParser()->push_back (new OptionOneParam (STR_OUT_FILE,           "output_file",    true));
-    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,"Conserve low complexity sequences during indexing and querying", false));
+	// INDEX OR QUERY
+	getParser()->push_back (new OptionNoParam (STR_MAKE_INDEX,                 "Create and dump the index",      false));
+
+    // OPTIONS FOR CREATE INDEX AND PERFORM QUERIES
+    getParser()->push_back (new OptionOneParam (STR_DUMPED_QD_FILE_NAME,        "Mandatory for creating the index (creating) and for performing queries (read only). Dumped index file name",      true));
+    getParser()->push_back (new OptionOneParam (STR_CORE,                       "Indexing & querying: Number of thread(s)", false,  "1"));
+    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,        "Indexing & querying: Conserve low complexity sequences during indexing and querying", false));
+
+    // OPTIONS FOR CREATE INDEX
+	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH,          "graph input",   false));
 	getParser()->push_back (new OptionOneParam (STR_GAMMA,              "gamma value",    false, "2"));
     getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,        "fingerprint size",    false, "8"));
-    getParser()->push_back (new OptionOneParam (STR_CORE,               "Number of thread",    false, "1"));
-//    getParser()->push_back (new OptionOneParam (STR_THRESHOLD,          "Threshold to keep a read in the boolean vector",    false, "50"));
-    getParser()->push_back (new OptionOneParam (STR_THRESHOLD,                  "Minimal percentage of shared kmer span for considering a query read as similar to a read set.  The kmer span is the number of bases from the read query covered by a kmer shared with the target bank read set. If a read of length 80 has a kmer-span of 60 with the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read is output in the boolean vector).",    false, "50"));
-    getParser()->push_back (new OptionOneParam (STR_WINDOWS_SIZE, "size of the window. If the windows size is zero (default value), then the full read is considered",    false, "0"));
+
+
+    // OPTIONS FOR QUERY
+	getParser()->push_back (new OptionOneParam (STR_OUT_FILE,           "output_file",    false));
+    getParser()->push_back (new OptionOneParam (STR_THRESHOLD,          "Minimal percentage of shared kmer span for considering a query read as similar to a read set.  The kmer span is the number of bases from the read query covered by a kmer shared with the target bank read set. If a read of length 80 has a kmer-span of 60 with the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read is output in the boolean vector).",    false, "50"));
+    getParser()->push_back (new OptionOneParam (STR_WINDOWS_SIZE, 		"size of the window. If the windows size is zero (default value), then the full read is considered",    false, "0"));
+	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT,    "query input",    false));
 }
 
 
@@ -124,20 +131,6 @@ public:
 
 	~FunctorQuery () {
 	}
-	//
-	//	int median(vector<int> &v)
-	//	{
-	//		if(v.size()==0) return 0;
-	//	    size_t n = v.size() / 2;
-	//	    nth_element(v.begin(), v.begin()+n, v.end());
-	//	    return v[n];
-	//	}
-	//
-	//	float mean(vector<int> &v){
-	//		float mean=0;
-	//		for(auto element: v) mean+=element;
-	//		return mean/(float)v.size();
-	//	}
 
 	bool mean_median_min_max(vector<int> &v, float & mean, int & median, int & min, int & max){
 		if(v.size()==0) return false;
@@ -158,10 +151,7 @@ public:
 
 	}
     
-    
-    
     int number_positions_covered_shared_kmer(vector<int> &v, const int size_seq){
-        
         
         if(v.size()==0) return 0;
         int number_positions_covered    = 0;
@@ -218,14 +208,6 @@ public:
            
 			string toPrint (to_string(seq.getIndex())+" "+to_string(mean)+" "+to_string(median)+" "+to_string(min)+" "+to_string(max)+" "+to_string(percentage_span_kmer));
             
-//            toPrint.append(" ");
-//            for(int i=0;i<seq.getDataSize() ;i++){
-//                
-//                if (position_shared[i]) {
-//                    toPrint.append("1");
-//                }
-//                else toPrint.append("0");
-//            }
             
             toPrint.append("\n");
 
@@ -261,13 +243,23 @@ unsigned long get_bank_nb_items(IBank* bank){
 }
 
 void SRC_counter::parse_query_sequences (){
-    std::string bank_filename = getInput()->getStr(STR_URI_BANK_INPUT).substr(getInput()->getStr(STR_URI_BANK_INPUT).find_last_of("/\\") + 1);
+    std::string bank_filename = getInput()->getStr(STR_DUMPED_QD_FILE_NAME).substr(getInput()->getStr(STR_DUMPED_QD_FILE_NAME).find_last_of("/\\") + 1);
 
+    if (getInput()->getStr(STR_URI_QUERY_INPUT) == ""){
+        cerr<<STR_URI_QUERY_INPUT<<" missing "<<endl;
+        exit(0);
+    }
     BankAlbum banks (getInput()->getStr(STR_URI_QUERY_INPUT));
+
     const std::vector<IBank*>& banks_of_queries = banks.getBanks();
     const int number_of_read_sets = banks_of_queries.size();
     
 	FILE * pFile;
+
+    if (getInput()->getStr(STR_OUT_FILE) == ""){
+        cerr<<STR_OUT_FILE<<" missing "<<endl;
+        exit(0);
+    }
 	pFile = fopen (getInput()->getStr(STR_OUT_FILE).c_str(), "wb");
     
     
@@ -276,12 +268,9 @@ void SRC_counter::parse_query_sequences (){
         
         IBank* bank=banks_of_queries[bank_id];
         LOCAL (bank);
-//        BooleanVector bv;
-//        unsigned long bank_size = get_bank_nb_items(bank);
-//        bv.init_false(bank_size); // quick and dirty. Todo: implement a realocation of the bv in case the estimation is too low.
-//        bv.set_comment(string("Reads from "+bank->getId()+" in "+getInput()->getStr(STR_URI_BANK_INPUT)+" with threshold "+to_string(threshold)));
+
         
-        string message("#query_read_id (from bank "+bank->getId()+") mean median min max percentage_shared_positions -- number of shared "+to_string(kmer_size)+"mers with banq "+getInput()->getStr(STR_URI_BANK_INPUT)+"\n");
+        string message("#query_read_id (from bank "+bank->getId()+") mean median min max percentage_shared_positions -- number of shared "+to_string(kmer_size)+"mers with banq "+getInput()->getStr(STR_DUMPED_QD_FILE_NAME)+"\n");
         fwrite((message).c_str(), sizeof(char), message.size(), pFile);
         string progressMessage("Querying read set "+bank->getId());
         ProgressIterator<Sequence> itSeq (*bank, progressMessage.c_str());
@@ -297,42 +286,87 @@ void SRC_counter::parse_query_sequences (){
 }
 
 
+void SRC_counter::load_quasi_dictionary(std::string dumped_file_name){
+    std::ifstream is = std::ifstream(dumped_file_name, std::ios_base::binary); 
+    is.read(reinterpret_cast<char*>(&this->kmer_size), sizeof(this->kmer_size));
+	quasiDico = quasidictionaryKeyGeneric <IteratorKmerH5Wrapper, unsigned char >();
+    quasiDico.load(is);
+}
+
+
+
+void SRC_counter::write_quasi_dictionary(std::string dumped_file_name){
+    std::ofstream os = std::ofstream(dumped_file_name, std::ios_base::binary); 
+    os.write(reinterpret_cast<char const*>(&this->kmer_size), sizeof(this->kmer_size));
+    quasiDico.save(os);
+}
 void SRC_counter::execute (){
+
+
+    std::string dumped_file_name    = getInput()->getStr(STR_DUMPED_QD_FILE_NAME);
+    if (dumped_file_name == ""){
+        cerr<<STR_DUMPED_QD_FILE_NAME<<" missing "<<endl;
+        exit(0);
+    }
+
+
 	nbCores = getInput()->getInt(STR_CORE);
-    fingerprint_size = getInput()->getInt(STR_FINGERPRINT);
     keep_low_complexity = getInput()->get(STR_KEEP_LOW_COMPLEXITY)?true:false;
-    gamma_value = getInput()->getInt(STR_GAMMA);
-    windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
-    threshold = getInput()->getInt(STR_THRESHOLD);
-    cout<<"gamma value is"<<gamma_value<<endl;
+
 	// IMPORTANT NOTE:
 	// Actually, during the filling of the dictionary values, one may fall on non solid non indexed kmers
-	// that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
-	// values are gonna be stored for all kmers. This is why I currently us a vector<u_int32_t> for storing read ids associated to a kmer.
+	// that are quasi dictionary false positives (even with a non null fingerprint. This means that one nevers knows in advance how much
+	// values are gonna be stored for all kmers. This is why I currently use a vector<u_int32_t> for storing read ids associated to a kmer.
 
-	// We need a non null finger print because of non solid non indexed kmers
-	//	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
-	//		fingerprint_size=0;
-	cout<<"fingerprint = "<<fingerprint_size<<endl;
-	create_and_fill_quasi_dictionary();
 
-	parse_query_sequences();
 
-	getInfo()->add (1, &LibraryInfo::getInfo());
-	getInfo()->add (1, "input");
-	getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
-	getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
-    getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
-    getInfo()->add (2, "windows_size", "%d", windows_size);
-    getInfo()->add (2, "Minimal kmer span percentage", "%d", threshold);
-    
-	getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
-    getInfo()->add (2, "gamma",  "%d",  gamma_value);
-    if(keep_low_complexity)
-        getInfo()->add (2, "Low complexity query sequences were kept");
-    else
-        getInfo()->add (2, "Low complexity query sequences were removed");
-    
-	getInfo()->add (1, "output");
-	getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
+    bool make_index                 	= getInput()->get(STR_MAKE_INDEX)?true:false;
+    // MAKE INDEX:
+    if (make_index){
+	    fingerprint_size                = getInput()->getInt(STR_FINGERPRINT);
+        gamma_value                     = getInput()->getInt(STR_GAMMA);
+
+
+		create_and_fill_quasi_dictionary();
+        write_quasi_dictionary(dumped_file_name); 
+
+		getInfo()->add (1, &LibraryInfo::getInfo());
+        getInfo()->add (1, "input");
+
+        getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
+        getInfo()->add (2, "Fingerprint size",  "%d",  fingerprint_size);
+        getInfo()->add (2, "gamma",  "%d",  gamma_value);
+        if(keep_low_complexity)
+            getInfo()->add (2, "Low complexity sequences were kept");
+        else
+            getInfo()->add (2, "Low complexity sequences were removed");
+            
+        getInfo()->add (1, "output");
+        getInfo()->add (2, "Index dumped in",  "%s",  dumped_file_name.c_str());
+    }
+	else{
+   		windows_size         = getInput()->getInt(STR_WINDOWS_SIZE);
+		// output named 		  getIput()->getStr(STR_OUT_FILE) is generated in the "parse_query_sequences" method
+		// input queries 		  getIput()->getStr(STR_URI_QUERY_INPUT) is generated in the "parse_query_sequences" method
+    	threshold 						= getInput()->getInt(STR_THRESHOLD);
+
+		load_quasi_dictionary(dumped_file_name); 
+		parse_query_sequences();
+
+		getInfo()->add (1, &LibraryInfo::getInfo());
+		getInfo()->add (1, "input");
+        getInfo()->add (2, "Used index",  "%s",  getInput()->getStr(STR_DUMPED_QD_FILE_NAME).c_str());
+		getInfo()->add (2, "Query bank",  "%s",  getInput()->getStr(STR_URI_QUERY_INPUT).c_str());
+		getInfo()->add (2, "Kmer size",  "%d",  kmer_size);
+		getInfo()->add (2, "windows_size", "%d", windows_size);
+		getInfo()->add (2, "Minimal kmer span percentage", "%d", threshold);
+		if(keep_low_complexity)
+			getInfo()->add (2, "Low complexity query sequences were kept");
+		else
+			getInfo()->add (2, "Low complexity query sequences were removed");
+		
+		getInfo()->add (1, "output");
+		getInfo()->add (2, "Results written in",  "%s",  getInput()->getStr(STR_OUT_FILE).c_str());
+	}
+
 }

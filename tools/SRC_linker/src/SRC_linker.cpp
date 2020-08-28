@@ -1,4 +1,4 @@
-#include <SRC_linker_ram.hpp>
+#include <SRC_linker.hpp>
 
 
 using namespace std;
@@ -24,17 +24,23 @@ static const char* STR_ZERO_DENSITY_WINDOWS_SIZE    = "-zero_density_windows_siz
 static const char* STR_ZERO_DENSITY_THRESHOLD       = "-zero_density_threshold";
 
 
-SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
-	// We add some custom arguments for command line interface
+SRC_linker::SRC_linker ()  : Tool ("SRC_linker"){
+	// INDEX OR QUERY
 	getParser()->push_back (new OptionNoParam (STR_MAKE_INDEX,                 "Create and dump the index",      false));
-    // CREATE INDEX
+
+    // OPTIONS FOR CREATE INDEX AND PERFORM QUERIES
     getParser()->push_back (new OptionOneParam (STR_DUMPED_QD_FILE_NAME,        "Mandatory for creating the index (creating) and for performing queries (read only). Dumped index file name",      true));
+    getParser()->push_back (new OptionOneParam (STR_CORE,                       "Indexing & querying: Number of thread(s)", false,  "1"));
+    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,        "Indexing & querying: Conserve low complexity sequences during indexing and querying", false));
+
+
+    // OPTIONS FOR CREATE INDEX
 	getParser()->push_back (new OptionOneParam (STR_URI_GRAPH,                  "Mandatory for creating the index. Graph input",      false, ""));
 	getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT,             "Mandatory for creating the index. Bank input",       false, ""));
     getParser()->push_back (new OptionOneParam (STR_GAMMA,                      "Creating the index: gamma value",      false,  "2"));
 	getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,                "Creating the index: fingerprint size", false,  "8"));
 
-    // QUERY
+    // OPTIONS FOR QUERY
 	getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT,            "Mandatory for performing queries. Query input",      false, ""));
 	getParser()->push_back (new OptionOneParam (STR_OUT_FILE,                   "Mandatory for performing queries. Output result file",      false, ""));
 	getParser()->push_back (new OptionOneParam (STR_THRESHOLD,                  "Performing queries: Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved).",    false, "75"));
@@ -44,12 +50,10 @@ SRC_linker_ram::SRC_linker_ram ()  : Tool ("SRC_linker_ram"){
     getParser()->push_back (new OptionOneParam (STR_ZERO_DENSITY_THRESHOLD,     "Performing queries: See \"-zero_density_windows_size\"", false, "80"));
 
    
-    getParser()->push_back (new OptionOneParam (STR_CORE,                       "Indexing & querying: Number of thread(s)", false,  "1"));
-    getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,        "Indexing & querying: Conserve low complexity sequences during indexing and querying", false));
 }
 
 
-void SRC_linker_ram::create_quasi_dictionary (){
+void SRC_linker::create_quasi_dictionary (){
     //	const int display = getInput()->getInt (STR_VERBOSE);
 	// We get a handle on the HDF5 storage object.
 	// Note that we use an auto pointer since the StorageFactory dynamically allocates an instance
@@ -105,7 +109,7 @@ struct FunctorIndexer{
 };
 
 
-void SRC_linker_ram::fill_quasi_dictionary (){
+void SRC_linker::fill_quasi_dictionary (){
 
     string bank_file_name = getInput()->getStr(STR_URI_BANK_INPUT);
     if (bank_file_name == ""){
@@ -344,7 +348,7 @@ private:
 };
 
 
-void SRC_linker_ram::parse_query_sequences (){
+void SRC_linker::parse_query_sequences (){
 
 
     string query_fof = getInput()->getStr(STR_URI_QUERY_INPUT);
@@ -403,7 +407,7 @@ void SRC_linker_ram::parse_query_sequences (){
 //	delete synchro;
 }
 
-void SRC_linker_ram::load_quasi_dictionary(std::string dumped_file_name){
+void SRC_linker::load_quasi_dictionary(std::string dumped_file_name){
     std::ifstream is = std::ifstream(dumped_file_name, std::ios_base::binary); 
     is.read(reinterpret_cast<char*>(&this->kmer_size), sizeof(this->kmer_size));
     quasiDico = quasidictionaryVectorKeyGeneric<IteratorKmerH5Wrapper, u_int32_t>();
@@ -412,10 +416,10 @@ void SRC_linker_ram::load_quasi_dictionary(std::string dumped_file_name){
 
 
 
-void SRC_linker_ram::write_quasi_dictionary(std::string dumped_file_name){
+void SRC_linker::write_quasi_dictionary(std::string dumped_file_name){
     std::ofstream os = std::ofstream(dumped_file_name, std::ios_base::binary); 
     os.write(reinterpret_cast<char const*>(&this->kmer_size), sizeof(this->kmer_size));
-    quasiDico.savee(os);
+    quasiDico.save(os);
 }
 
 
@@ -443,7 +447,7 @@ void SRC_linker_ram::write_quasi_dictionary(std::string dumped_file_name){
 
 
 
-void SRC_linker_ram::execute (){
+void SRC_linker::execute (){
     
     // COMMON:
 	nbCores                         = getInput()->getInt(STR_CORE);

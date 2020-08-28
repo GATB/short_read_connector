@@ -56,6 +56,9 @@ public:
 
 
     void parse_query_sequences();
+
+    void load_quasi_dictionary(std::string dumped_file_name);
+    void write_quasi_dictionary(std::string dumped_file_name);
 };
 
 /********************************************************************************/

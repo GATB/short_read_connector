@@ -16,8 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *****************************************************************************/
 
-#ifndef _TOOL_SRC_linker_ram_HPP_
-#define _TOOL_SRC_linker_ram_HPP_
+#ifndef _TOOL_SRC_linker_HPP_
+#define _TOOL_SRC_linker_HPP_
 
 /********************************************************************************/
 #include <gatb/gatb_core.hpp>
@@ -38,7 +38,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class SRC_linker_ram : public Tool
+class SRC_linker : public Tool
 {
 	
 private:
@@ -59,7 +59,7 @@ private:
 public:
 
     // Constructor
-	SRC_linker_ram ();
+	SRC_linker ();
 
     // Actual job done by the tool is here
     void execute ();
@@ -78,4 +78,4 @@ public:
 
 /********************************************************************************/
 
-#endif /* _TOOL_SRC_linker_ram_HPP_ */
+#endif /* _TOOL_SRC_linker_HPP_ */

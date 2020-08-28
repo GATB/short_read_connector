@@ -27,18 +27,18 @@ fi
 
 
 function help {
-    echo "short_read_connector_linker.sh - Compare reads from two read sets (distinct or not)"
+    echo "short_read_connector_counter.sh - Compare reads from two read sets (distinct or not)"
     echo "Version "$version
 
-    echo "Usage: sh short_read_connector_linker.sh [index/query]"
+    echo "Usage: sh short_read_connector_counter.sh [index/query]"
 }
 
 
 
 
 function help_index {
-    echo "short_read_connector_linker.sh index - Index a read file"
-    echo "Usage: sh short_read_connector_linker.sh index -b read_file  -i dumped_index_name [OPTIONS]"
+    echo "short_read_connector_counter.sh index - Index a read file"
+    echo "Usage: sh short_read_connector_counter.sh index -b read_file -i dumped_index_name [OPTIONS]"
     echo  "   -b read_files for bank"
     echo  "     Example: -b data/c1.fasta.gz"
 
@@ -54,27 +54,24 @@ function help_index {
 
 function help_query {
     
-    echo "Usage: sh short_read_connector_linker.sh query -i indexed_file -q read_file_of_files [OPTIONS]"
+    echo "Usage: sh short_read_connector_counter.sh query -i indexed_file -q read_file_of_files [OPTIONS]"
     echo  "MANDATORY:"
-    echo  " -i index created by short_read_connector_linker.sh index (read only)"
+    echo  " -i index created by short_read_connector_counter.sh index (read only)"
     echo  "   Example: -i my_index.dumped"
     echo  " -q read_file_of_files for query"
     echo  "   Example: -q data/fof.txt (with fof being a file of file descriptor)"
 
     echo  "OPTIONS:"
     echo  "   -w <int> window_size. See option -s. If the windows size is zero (default value), then the full read is considered. Default=0"
-    echo  "   -s <int> kmer_threshold: Minimal percentage of shared kmer span for considering 2 reads as similar.  "
-    echo  "            The kmer span is the number of bases from the read query covered by a kmer shared with the target read."
-    echo  "            If a read of length 80 has a kmer-span of 60 with another read (of unkonwn size) from the bank, then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\") contains at least kmer_threshold percent of position covered by shared kmers, the read couple is output."
-    echo  "                 TRICK: with kmer_threshold<=0 a single kmer is sufficient in the linker mode to link two reads. "
+    echo  "   -s <int> kmer_threshold: Minimal percentage of shared kmer span for considering a query read as similar to a data set.  "
+    echo  "            The kmer span is the number of bases from the read query covered by a kmer shared with the bank."
     echo  "   -l Keep low complexity regions (default false)"
+    echo  "            If a read of length 80 has a kmer-span of 60, then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\") contains at least kmer_threshold percent of positions covered by shared kmers, the read is output."
     echo  "   -p <string> prefix. All out files will start with this prefix. Default=\"short_read_connector_res\""
     echo  "   -t <int> number of thread used. Default=0 (all)"
 
 
-
-    # echo  "   -A index kmers present at least 'kmer_abundance_min' times in the bank AND in the queries."
-    echo  "   -r do not output precision about pair of similar reads. Only ids of reads from queries similar to at least one read from bank are output."
+   
 }
 
 
@@ -191,20 +188,6 @@ if [ "$feature" == "index" ]; then
     fi
 
 
-    # in case of linker, we cannot apply to multiple sequences
-    if [ ! $commet_like_option ]; then
-        # Check that the bank file is NOT a file of file. If its gzipped: consider its ok, else check that the first line contains something that is not a file
-        gunzip -t ${bank_set} 2>/dev/null
-        if [ $? -ne 0 ] # IN CASE THIS IS NOT A GZIPPED FILE
-        then
-            line=`head -n 1 ${bank_set} | cut -f 1 -d ' '`
-            if [ -f $line ]; then
-                echo "With SRC linker (without the -r option), the bank must not be composed of a file of file. It must be a fasta or fastq file gzipped or not"
-                exit 1
-            fi
-        fi
-    fi
-
 
     out_dsk="solid_kmers_k"${kmer_size}".h5"
 
@@ -223,7 +206,7 @@ if [ "$feature" == "index" ]; then
     fi
 
     # create the index
-    cmd="${BIN_DIR}/SRC_linker  -make_index -dumped_quasi_dict ${index_name} -graph ${out_dsk} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}  ${keep_low_complexity_option}"
+    cmd="${BIN_DIR}/SRC_counter  -make_index -dumped_quasi_dict ${index_name} -graph ${out_dsk} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}  ${keep_low_complexity_option}"
 
     echo ${cmd}
     ${cmd}
@@ -248,7 +231,6 @@ fi # END INDEXATION
 # QUERY 
 # #####
 if [ "$feature" == "query" ]; then
-    commet_like_option=""
     query_set=""
     kmer_size=31
     kmer_threshold=75
@@ -260,7 +242,7 @@ if [ "$feature" == "query" ]; then
     #######################################################################
     #################### GET QUERY OPTIONS          #######################
     #######################################################################
-    while getopts "hi:rw:q:p:ls:t:" opt; do
+    while getopts "hi:w:q:p:ls:t:" opt; do
         case $opt in
         h)
             help_query
@@ -304,10 +286,6 @@ if [ "$feature" == "query" ]; then
             kmer_threshold=$OPTARG
             ;;
 
-        r)
-            echo "Output only ids of read shared (no complete links)">&2
-            commet_like_option="-no_sharing_detail"
-            ;;
 
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -352,7 +330,7 @@ if [ "$feature" == "query" ]; then
 
 
     # Creating the command
-    cmd="${BIN_DIR}/SRC_linker -dumped_quasi_dict ${index_name} -query ${query_set} -out ${result_file} -kmer_threshold ${kmer_threshold}  -core ${core_used} ${commet_like_option} ${zerod_option} ${keep_low_complexity_option} -windows_size ${windows_size}"
+    cmd="${BIN_DIR}/SRC_counter -dumped_quasi_dict ${index_name} -query ${query_set} -out ${result_file} -coverage_threshold ${kmer_threshold}  -core ${core_used}  ${zerod_option} ${keep_low_complexity_option} -windows_size ${windows_size}"
 
 
 
