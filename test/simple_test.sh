@@ -6,9 +6,9 @@
 
 # RUN SRC
 # Create the index
-(bash ../short_read_connector_linker.sh index -b ../data/c1.fasta.gz -i index.dumped)> log_linker 2> log_linker_err
+(bash ../short_read_connector_linker.sh index -b ../data/c1.fasta.gz -i index_linker.dumped)> log_linker 2> log_linker_err
 # Permorf queries
-(bash  ../short_read_connector_linker.sh query -i index.dumped -q fof.txt -p linker)>> log_linker 2>> log_linker_err
+(bash  ../short_read_connector_linker.sh query -i index_linker.dumped -q fof.txt -p linker)>> log_linker 2>> log_linker_err
 # (bash ../short_read_connector_linker.sh -b ../data/c1.fasta.gz -q fof.txt -p linker) > log_linker 2> log_linker_err
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on linker"
@@ -34,9 +34,9 @@ echo "*** DIFF LINKER OK ***"
 # RUN SRC
 
 # Create the index
-(bash ../short_read_connector_linker.sh index -b ../data/c1.fasta.gz -i index.dumped)> log_linker 2> log_linker_err
+(bash ../short_read_connector_linker.sh index -b ../data/c1.fasta.gz -i index_linker.dumped)> log_linker 2> log_linker_err
 # Permorf queries
-(bash  ../short_read_connector_linker.sh query -i index.dumped -q fof.txt -p linker_no_link -r)>> log_linker 2>> log_linker_err
+(bash  ../short_read_connector_linker.sh query -i index_linker.dumped -q fof.txt -p linker_no_link -r)>> log_linker 2>> log_linker_err
 
 
 # (bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -p linker_no_link -r) > log_linker 2> log_linker_err
@@ -88,7 +88,7 @@ echo "*** DIFF COUNTER OK ***"
 ## CLEAN TEMP FILES
 ##########################################################
 
-rm -f Erase_Me *.h5 counter.txt wc_* linker.txt linker_no_link.txt  log* 
+rm -f Erase_Me *.h5 counter.txt wc_* linker.txt linker_no_link.txt  index_counter.dumped index_linker.dumped
 
 echo "*** Test: OK ***"
 

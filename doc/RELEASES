@@ -8,3 +8,7 @@
 	Add the -r option
 	add the scripts/SRC_linker2fasta.py script
 	update documentation accordingly
+1.2.0	(august 2020)
+	Add the serialisation of the index
+	Differenciate counter and linker scripts
+	update documentation accordingly

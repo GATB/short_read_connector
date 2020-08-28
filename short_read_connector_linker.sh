@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="1.1.0"
+version="1.2.0"
 
 
 
@@ -223,7 +223,7 @@ if [ "$feature" == "index" ]; then
     fi
 
     # create the index
-    cmd="${BIN_DIR}/SRC_linker  -make_index -dumped_quasi_dict ${index_name} -graph ${out_dsk} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}  ${keep_low_complexity_option}"
+    cmd="${BIN_DIR}/SRC_linker  -make_index -dumped_quasi_dict ${index_name} -graph ${out_dsk} -bank ${bank_set} -fingerprint_size ${fingerprint_size} -core ${core_used} -gamma ${gamma}  ${keep_low_complexity_option}"
 
     echo ${cmd}
     ${cmd}

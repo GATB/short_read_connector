@@ -423,30 +423,6 @@ void SRC_linker::write_quasi_dictionary(std::string dumped_file_name){
 }
 
 
-
-    // getParser()->push_back (new OptionOneParam (STR_MAKE_INDEX,                 "Create and dump the index",      true));
-    // // CREATE INDEX
-    // getParser()->push_back (new OptionOneParam (STR_DUMPED_QD_FILE_NAME,        "Mandatory for creating the index. Dumped index file name",      false, ""));
-	// getParser()->push_back (new OptionOneParam (STR_URI_GRAPH,                  "Mandatory for creating the index. Graph input",      false, ""));
-	// getParser()->push_back (new OptionOneParam (STR_URI_BANK_INPUT,             "Mandatory for creating the index. Bank input",       false, ""));
-    // getParser()->push_back (new OptionOneParam (STR_GAMMA,                      "Creating the index: gamma value",      false,  "2"));
-	// getParser()->push_back (new OptionOneParam (STR_FINGERPRINT,                "Creating the index: fingerprint size", false,  "8"));
-
-    // // QUERY
-	// getParser()->push_back (new OptionOneParam (STR_URI_QUERY_INPUT,            "Mandatory for performing queries. Query input",      false, ""));
-	// getParser()->push_back (new OptionOneParam (STR_OUT_FILE,                   "Mandatory for performing queries. Output result file",      true, ""));
-	// getParser()->push_back (new OptionOneParam (STR_THRESHOLD,                  "Performing queries: Minimal percentage of shared kmer span for considering 2 reads as similar.  The kmer span is the number of bases from the read query covered by a kmer shared with the target read. If a read of length 80 has a kmer-span of 60 with another read from the bank (of unkonwn size), then the percentage of shared kmer span is 75%. If a least a windows (of size \"windows_size\" contains at least kmer_threshold percent of positionf covered by shared kmers, the read couple is conserved).",    false, "75"));
-	// getParser()->push_back (new OptionOneParam (STR_WINDOWS_SIZE,               "Performing queries: Size of the window. If the windows size is zero (default value), then the full read is considered",    false, "0"));
-    // getParser()->push_back (new OptionNoParam  (STR_COMMET_LIKE,                "Performing queries: Output ids of reads from query input that are shared with at least one read from reference bank input. With this option no information with whom a read is shared is provided, one only knows that a read is shared.", false));
-    // getParser()->push_back (new OptionOneParam (STR_ZERO_DENSITY_WINDOWS_SIZE,  "Performing queries: If defined (>0): two reads are linked if they DO NOT contain a window of this size, with a percentage of zero higher than \"-zero_density_threshold\". Note: this test is performed over the full read length, not limited to \"-windows_size\"", false,  "0"));
-    // getParser()->push_back (new OptionOneParam (STR_ZERO_DENSITY_THRESHOLD,     "Performing queries: See \"-zero_density_windows_size\"", false, "80"));
-
-   
-    // getParser()->push_back (new OptionOneParam (STR_CORE,                       "Indexing & querying: Number of thread(s)", false,  "1"));
-    // getParser()->push_back (new OptionNoParam  (STR_KEEP_LOW_COMPLEXITY,        "Indexing & querying: Conserve low complexity sequences during indexing and querying", false));
-
-
-
 void SRC_linker::execute (){
     
     // COMMON:
@@ -494,9 +470,6 @@ void SRC_linker::execute (){
         // that are quasi dictionary false positives (ven with a non null fingerprint. This means that one nevers knows in advance how much
         // values are gonna be stored for all kmers. This is why I currently us a vector<u_int32_t> for storing read ids associated to a kmer.
 
-        // We need a non null finger print because of non solid non indexed kmers
-        //	if (getInput()->getStr(STR_URI_BANK_INPUT).compare(getInput()->getStr(STR_URI_QUERY_INPUT))==0)
-        //		fingerprint_size=0;
         threshold               = getInput()->getInt(STR_THRESHOLD);
         windows_size            = getInput()->getInt(STR_WINDOWS_SIZE);
         commet_like             = getInput()->get(STR_COMMET_LIKE)?true:false;
