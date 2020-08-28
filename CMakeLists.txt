@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 2.6)
 # The version number.
 ################################################################################
 SET (gatb-tool_VERSION_MAJOR 1)
-SET (gatb-tool_VERSION_MINOR 1)
-SET (gatb-tool_VERSION_PATCH 3)
+SET (gatb-tool_VERSION_MINOR 2)
+SET (gatb-tool_VERSION_PATCH 0)
 
 IF (DEFINED MAJOR)
     SET (gatb-tool_VERSION_MAJOR ${MAJOR})
@@ -60,7 +60,7 @@ ADD_SUBDIRECTORY(thirdparty)
 ################################################################################
 
 SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY  "gatb-tool ${PROJECT_NAME}")
-SET (CPACK_PACKAGE_VENDOR               "Genscale team (INRIA)")
+SET (CPACK_PACKAGE_VENDOR               "Genscale team (Inria)")
 SET (CPACK_PACKAGE_VERSION_MAJOR        "${gatb-tool_VERSION_MAJOR}")
 SET (CPACK_PACKAGE_VERSION_MINOR        "${gatb-tool_VERSION_MINOR}")
 SET (CPACK_PACKAGE_VERSION_PATCH        "${gatb-tool_VERSION_PATCH}")
@@ -91,7 +91,8 @@ INSTALL (FILES ${CMAKE_CURRENT_SOURCE_DIR}/data/c2.fasta.gz                   DE
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc                            DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test                           DESTINATION .)
 INSTALL (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts                        DESTINATION . FILES_MATCHING REGEX ".*\\.(py|sh)$"  PATTERN "jenkins" EXCLUDE)
-INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/short_read_connector.sh        DESTINATION .)
+INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/short_read_connector_counter.sh        DESTINATION .)
+INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/short_read_connector_linker.sh        DESTINATION .)
 INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/README.md                      DESTINATION .)
 INSTALL (FILES     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE                        DESTINATION .)
 
