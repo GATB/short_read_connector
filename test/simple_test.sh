@@ -5,7 +5,11 @@
 ##########################################################
 
 # RUN SRC
-(bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -p linker) > log_linker 2> log_linker_err
+# Create the index
+(bash ../short_read_connector_linker.sh index -b ../data/c1.fasta.gz -i index.dumped)> log_linker 2> log_linker_err
+# Permorf queries
+(bash  ../short_read_connector_linker.sh query -i index.dumped -q fof.txt -p linker)>> log_linker 2>> log_linker_err
+# (bash ../short_read_connector_linker.sh -b ../data/c1.fasta.gz -q fof.txt -p linker) > log_linker 2> log_linker_err
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on linker"
   exit 1
@@ -28,7 +32,14 @@ echo "*** DIFF LINKER OK ***"
 ##########################################################
 
 # RUN SRC
-(bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -p linker_no_link -r) > log_linker 2> log_linker_err
+
+# Create the index
+(bash ../short_read_connector_linker.sh index -b ../data/c1.fasta.gz -i index.dumped)> log_linker 2> log_linker_err
+# Permorf queries
+(bash  ../short_read_connector_linker.sh query -i index.dumped -q fof.txt -p linker_no_link -r)>> log_linker 2>> log_linker_err
+
+
+# (bash ../short_read_connector.sh -b ../data/c1.fasta.gz -q fof.txt -p linker_no_link -r) > log_linker 2> log_linker_err
 if [ $? -ne 0 ] ; then
   echo "*** Test: FAILURE on linker without link output"
   exit 1
