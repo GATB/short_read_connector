@@ -71,7 +71,7 @@ BooleanVector create_bv(const std::string & short_read_connector_file_name, cons
             continue;
         }
         
-        std::istringstream iss(line);
+        
         std::string token;
         long double id=-1;
         int position=-1;
@@ -83,17 +83,17 @@ BooleanVector create_bv(const std::string & short_read_connector_file_name, cons
             // format into 0 808 89 89.000000 675 93 93.000000
             std::replace( line.begin(), line.end(), ':', ' ');
             std::replace( line.begin(), line.end(), '-', ' ');
-            //        cout<<line<<endl;
+            std::istringstream iss(line);
             while (std::getline(iss, token, ' '))
             {
                 ++position;
-                //            cout<<to_string(position)<<" "<<token<<endl;
-                if ( position==0 ){id=std::stold( token ); continue;}
+                if ( position==0 ){id=std::stold( token );
+                 continue;}
                 if ( position%3==0 ){
+
                     float value=std::stof( token );
-                    if ( value>threshold ){
+                    if ( value>=threshold ){
                         
-                        //                    cout<<"HOHOHO"<<to_string(position)<<" "<<token<<endl;
                         bv.set(id);
                         break;
                     }
@@ -101,6 +101,7 @@ BooleanVector create_bv(const std::string & short_read_connector_file_name, cons
             }
         }// END FOR LINKER
         else { // FOR COUNTER
+            std::istringstream iss(line);
             // a line for counter is: 0 3.614286 4 2 5 100.000000
             // // we need to get first value (here 0, the id of the query read) and last float value (100.0000000)
             while (std::getline(iss, token, ' ')){

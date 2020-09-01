@@ -214,7 +214,6 @@ public:
 			for(auto &read_id: associated_read_ids){
                 if (at_least_one_kmer){
                     similar_read_ids.insert(read_id);
-                    
                     continue;
                 }
 				std::unordered_map<u_int32_t, vector<bool>>::const_iterator element = similar_read_ids_position.find(read_id);
