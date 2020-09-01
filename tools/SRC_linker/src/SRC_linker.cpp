@@ -424,6 +424,9 @@ void SRC_linker::write_quasi_dictionary(std::string dumped_file_name){
 
 void SRC_linker::execute (){
     
+    std::chrono::steady_clock::time_point before;
+    std::chrono::steady_clock::time_point after;
+
     // COMMON:
 	nbCores                         = getInput()->getInt(STR_CORE);
     keep_low_complexity     = getInput()->get(STR_KEEP_LOW_COMPLEXITY)?true:false;
@@ -442,9 +445,19 @@ void SRC_linker::execute (){
     if (make_index){
 	    fingerprint_size                = getInput()->getInt(STR_FINGERPRINT);
         gamma_value                     = getInput()->getInt(STR_GAMMA);
+        
+        before = std::chrono::steady_clock::now();
 	    create_quasi_dictionary();
+        long long time_create_quasi_dictionary = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - before).count();
+
+
+        before = std::chrono::steady_clock::now();
 	    fill_quasi_dictionary();
+        long long time_fill_quasi_dictionary = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - before).count();
+
+        before = std::chrono::steady_clock::now();
         write_quasi_dictionary(dumped_file_name); 
+        long long time_write_quasi_dictionary = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - before).count();
 
         getInfo()->add (1, "input");
         getInfo()->add (2, "Reference bank",  "%s",  getInput()->getStr(STR_URI_BANK_INPUT).c_str());
@@ -455,7 +468,12 @@ void SRC_linker::execute (){
             getInfo()->add (2, "Low complexity sequences were kept");
         else
             getInfo()->add (2, "Low complexity sequences were removed");
-            
+        
+        getInfo()->add (1, "durations");
+        getInfo()->add (2, "Time creating the quasi dictionary (s)",  "%d",  time_create_quasi_dictionary);
+        getInfo()->add (2, "Time filling the quasi dictionary (s)",  "%d",  time_fill_quasi_dictionary);
+        getInfo()->add (2, "Time writing the quasi dictionary (s)",  "%d",  time_write_quasi_dictionary);
+
         getInfo()->add (1, "output");
         getInfo()->add (2, "Index dumped in",  "%s",  dumped_file_name.c_str());
     }
@@ -476,10 +494,18 @@ void SRC_linker::execute (){
 
 
 
-
+        cout << " Loading the "<<dumped_file_name<<" index "<<endl; 
+        before = std::chrono::steady_clock::now();
         load_quasi_dictionary(dumped_file_name); 
+        after = std::chrono::steady_clock::now();
+        long long loading_index_time = std::chrono::duration_cast<std::chrono::seconds>(after - before).count();
 
+
+        cout << " Performing queries"<<endl;
+        before = std::chrono::steady_clock::now();
         parse_query_sequences();
+        after = std::chrono::steady_clock::now();
+        long long query_time =  std::chrono::duration_cast<std::chrono::seconds>(after - before).count();
 
         getInfo()->add (1, &LibraryInfo::getInfo());
         getInfo()->add (1, "input");
@@ -493,7 +519,11 @@ void SRC_linker::execute (){
             getInfo()->add (2, "Low complexity sequences were kept");
         else
             getInfo()->add (2, "Low complexity sequences were removed");
-            
+        
+        getInfo()->add (1, "durations");
+        getInfo()->add (2, "Time loading index (s)",  "%d",  loading_index_time);
+        getInfo()->add (2, "Time performing queries (s)",  "%d",  query_time);
+
         getInfo()->add (1, "output");
         if (commet_like)
             getInfo()->add (2, "Output only ids of read shared (no complete links)");

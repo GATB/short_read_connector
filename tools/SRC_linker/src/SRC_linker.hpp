@@ -25,6 +25,7 @@
 #include "../../../thirdparty/quasi_dictionary/src/quasidictionary.h"
 #include <algorithm>
 #include <common.hpp>
+#include <chrono>
 /********************************************************************************/
 
 ////////////////////////////////////////////////////////////////////////////////
