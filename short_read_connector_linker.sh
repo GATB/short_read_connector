@@ -39,7 +39,7 @@ function help {
 function help_index {
     echo "short_read_connector_linker.sh index - Index a read file"
     echo "Usage: sh short_read_connector_linker.sh index -b read_file  -i dumped_index_name [OPTIONS]"
-    echo  "   -b read_files for bank"
+    echo  "   -b read_file for bank (fasta or fastq, gzipped or not)"
     echo  "     Example: -b data/c1.fasta.gz"
 
     echo  "   -i <string>. File of the index file to be created. Example \"my_index.dumped\""

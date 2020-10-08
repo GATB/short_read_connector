@@ -39,7 +39,7 @@ function help {
 function help_index {
     echo "short_read_connector_counter.sh index - Index a read file"
     echo "Usage: sh short_read_connector_counter.sh index -b read_file -i dumped_index_name [OPTIONS]"
-    echo  "   -b read_files for bank"
+    echo  "   -b read_file for bank (fasta or fastq, gzipped or not)"
     echo  "     Example: -b data/c1.fasta.gz"
 
     echo  "   -i <string>. File of the index file to be created. Example \"my_index.dumped\""
@@ -190,13 +190,13 @@ if [ "$feature" == "index" ]; then
 
 
     out_dsk="solid_kmers_k"${kmer_size}".h5"
-
-    if [ "$abundanceMode" -eq 1 ]; then
-        ls ${bank_set} ${query_set} > FOF_FOR_DSK_REMOVE_ME_PLEASE.txt 
-        cmd="${dsk_bin} -file FOF_FOR_DSK_REMOVE_ME_PLEASE.txt -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind all"
-    else
-        cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind one"
-    fi 
+    # echo $abundanceMode
+ #    if [ "$abundanceMode" -eq 1 ]; then
+ #        ls ${bank_set} ${query_set} > FOF_FOR_DSK_REMOVE_ME_PLEASE.txt
+ #        cmd="${dsk_bin} -file FOF_FOR_DSK_REMOVE_ME_PLEASE.txt -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind all"
+ #    else
+    cmd="${dsk_bin} -file ${bank_set} -kmer-size ${kmer_size} -abundance-min ${abundance_min} -out ${out_dsk} -nb-cores ${core_used} -solidity-kind one"
+    # fi 
     echo ${cmd}
     ${cmd}
     if [ $? -ne 0 ]

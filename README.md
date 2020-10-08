@@ -30,10 +30,10 @@ Getting the latest source code
 Requirements
 ------------
 
-CMake 2.6+; see http://www.cmake.org/cmake/resources/software.html
+* CMake 3.1.0+; see http://www.cmake.org/cmake/resources/software.html
 
-c++ compiler; compilation was tested with gcc and g++ version\>=4.5 (Linux) and
-clang version\>=4.1 (Mac OSX).
+* c++ compiler; compilation was tested with gcc and g++ version\>=4.5 (Linux) and
+  clang version\>=4.1 (Mac OSX).
 
 Instructions
 ------------
@@ -43,7 +43,7 @@ Instructions
 git clone --recursive https://github.com/GATB/rconnector.git
 
 # compile the code an run a simple test on your computer
-cd gatb-rconnector
+cd rconnector
 sh INSTALL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
