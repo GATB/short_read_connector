@@ -62,9 +62,9 @@ g++ --version
 [ `gcc -dumpversion` = 4.7 ] && { echo "GCC 4.7"; } || { echo "GCC version is not 4.7, we exit"; exit 1; }
 
 JENKINS_TASK=tool-${TOOL_NAME}-build-debian7-64bits-gcc-4.7-gitlab
-JENKINS_WORKSPACE=/scratchdir/builds/workspace/$JENKINS_TASK/
+JENKINS_WORKSPACE=$WORKSPACE/$JENKINS_TASK/
 
-GIT_DIR=/scratchdir/builds/workspace/gatb-${TOOL_NAME}
+GIT_DIR=$WORKSPACE/gatb-${TOOL_NAME}
 BUILD_DIR=/scratchdir/$JENKINS_TASK/gatb-${TOOL_NAME}/build
 
 rm -rf $BUILD_DIR
