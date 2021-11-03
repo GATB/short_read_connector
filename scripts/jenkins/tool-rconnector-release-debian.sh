@@ -92,7 +92,6 @@ git clone https://github.com/GATB/github-release-api.git
 #                       RETRIEVE ARTIFACTS FROM DEPENDENT TASKS     #
 #####################################################################
 
-#CI_URL=https://ci.inria.fr/gatb-core/view/Simka/job
 CI_URL=https://ci.inria.fr/gatb-core/view/RConnector-gitlab/
 
 JENKINS_TASK_DEB=tool-rconnector-build-debian7-64bits-gcc-4.7-gitlab
