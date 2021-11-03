@@ -93,7 +93,7 @@ git clone https://github.com/GATB/github-release-api.git
 #####################################################################
 
 #CI_URL=https://ci.inria.fr/gatb-core/view/Simka/job
-CI_URL=https://ci.inria.fr/gatb-core/view/RConnector/
+CI_URL=https://ci.inria.fr/gatb-core/view/RConnector-gitlab/
 
 JENKINS_TASK_DEB=tool-rconnector-build-debian7-64bits-gcc-4.7-gitlab
 JENKINS_TASK_MAC=tool-rconnector-build-macos-10.9.5-gcc-4.2.1-gitlab/
