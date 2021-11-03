@@ -102,7 +102,7 @@ if [ $? -eq 0 ] && [ "$INRIA_FORGE_LOGIN" != none ] && [ "$DO_NOT_STOP_AT_ERROR"
     
     #scp ${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria
     #scp ${TOOL_NAME}-${BRANCH_TO_BUILD}-Source.tar.gz ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria
-    mv ${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz $JENKINS_WORKSPACE/
-    mv ${TOOL_NAME}-${BRANCH_TO_BUILD}-Source.tar.gz $JENKINS_WORKSPACE/
+    mv ${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz $WORKSPACE/
+    mv ${TOOL_NAME}-${BRANCH_TO_BUILD}-Source.tar.gz $WORKSPACE/
 fi
 
