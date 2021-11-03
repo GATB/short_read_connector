@@ -28,7 +28,14 @@ DO_NOT_STOP_AT_ERROR : ${DO_NOT_STOP_AT_ERROR}
  Jenkins build parameters (built in)
 -----------------------------------------
 BUILD_NUMBER         : ${BUILD_NUMBER}
+JENKINS_HOME         : ${JENKINS_HOME}
+WORKSPACE            : ${WORKSPACE}
 "
+
+echo "======================="
+echo "ls $JENKINS_HOME"
+ls ${JENKINS_HOME}
+echo "======================="
 
 error_code () { [ "$DO_NOT_STOP_AT_ERROR" = "true" ] && { return 0 ; } }
 
@@ -54,12 +61,15 @@ g++ --version
 
 [ `gcc -dumpversion` = 4.7 ] && { echo "GCC 4.7"; } || { echo "GCC version is not 4.7, we exit"; exit 1; }
 
-JENKINS_TASK=tool-${TOOL_NAME}-build-debian7-64bits-gcc-4.7
-GIT_DIR=/scratchdir/builds/workspace/gatb-${TOOL_NAME}
+JENKINS_TASK=tool-${TOOL_NAME}-build-debian7-64bits-gcc-4.7-gitlab
+JENKINS_WORKSPACE=$WORKSPACE/$JENKINS_TASK/
+
+GIT_DIR=$WORKSPACE/gatb-${TOOL_NAME}
 BUILD_DIR=/scratchdir/$JENKINS_TASK/gatb-${TOOL_NAME}/build
 
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
+mkdir -p $JENKINS_WORKSPACE
 
 #-----------------------------------------------
 # we need gatb-core submodule to be initialized
@@ -99,10 +109,20 @@ cd $BUILD_DIR
 #                       PACKAGING                              #
 ################################################################
 
-# Upload bin bundle to the forge
+#-- Upload bin bundle as a build artifact
+#   -> bin bundle *-bin-Linux.tar.gz will be archived as a build artifact
+#   -> source package is handled by the osx task
+
 if [ $? -eq 0 ] && [ "$INRIA_FORGE_LOGIN" != none ] && [ "$DO_NOT_STOP_AT_ERROR" != true ]; then
-	make package
-    scp ${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Linux.tar.gz ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria
-    # source package is handled by the osx task
+    echo "Creating a binary archive... "
+    echo "N.B. this is NOT an official binary release"
+    make package
+
+    pwd
+    ls -atlhrsF
+
+    #-- Move the generated bin bundle to the workspace (so that it can be uploaded as a Jenkins job artifact)
+    mv ${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Linux.tar.gz $JENKINS_WORKSPACE/
+    
 fi
 
