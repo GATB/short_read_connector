@@ -92,23 +92,21 @@ git clone https://github.com/GATB/github-release-api.git
 #                       RETRIEVE ARTIFACTS FROM DEPENDENT TASKS     #
 #####################################################################
 
-CI_URL=https://ci.inria.fr/gatb-core/view/RConnector-gitlab
+CI_URL=https://ci.inria.fr/gatb-core/view/RConnector-gitlab/job
 
 JENKINS_TASK_DEB=tool-rconnector-build-debian7-64bits-gcc-4.7-gitlab
 JENKINS_TASK_MAC=tool-rconnector-build-macos-10.9.5-gcc-4.2.1-gitlab
 
 #retrieve last build from ci-inria (see tool-lean-build-XXX tasks)
-#scp ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Linux.tar.gz .
-wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/gatb-${TOOL_NAME}/build/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Linux.tar.gz
+wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/$JENKINS_TASK_DEB/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Linux.tar.gz
 [ $? != 0 ] && exit 1
 
-#scp ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz .
-wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/gatb-${TOOL_NAME}/build/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz
+wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz
 [ $? != 0 ] && exit 1
 
-#scp ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria/${TOOL_NAME}-${BRANCH_TO_BUILD}-Source.tar.gz .
-wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/gatb-${TOOL_NAME}/build/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Source.tar.gz
+wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Source.tar.gz
 [ $? != 0 ] && exit 1
+
 
 ################################################################
 #                       INTERACT WITH GITHUB                   #
