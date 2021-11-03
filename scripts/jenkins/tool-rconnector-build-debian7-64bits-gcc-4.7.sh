@@ -29,6 +29,7 @@ DO_NOT_STOP_AT_ERROR : ${DO_NOT_STOP_AT_ERROR}
 -----------------------------------------
 BUILD_NUMBER         : ${BUILD_NUMBER}
 JENKINS_HOME         : ${JENKINS_HOME}
+WORKSPACE            : ${WORKSPACE}
 "
 
 error_code () { [ "$DO_NOT_STOP_AT_ERROR" = "true" ] && { return 0 ; } }
