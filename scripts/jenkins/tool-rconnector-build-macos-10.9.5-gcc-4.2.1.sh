@@ -100,8 +100,7 @@ if [ $? -eq 0 ] && [ "$INRIA_FORGE_LOGIN" != none ] && [ "$DO_NOT_STOP_AT_ERROR"
     make package
     make package_source
     
-    #scp ${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria
-    #scp ${TOOL_NAME}-${BRANCH_TO_BUILD}-Source.tar.gz ${INRIA_FORGE_LOGIN}@scm.gforge.inria.fr:/home/groups/gatb-tools/htdocs/ci-inria
+    # make both tar.gz available as Jenkins build artifacts
     mv ${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz $WORKSPACE/
     mv ${TOOL_NAME}-${BRANCH_TO_BUILD}-Source.tar.gz $WORKSPACE/
 fi
