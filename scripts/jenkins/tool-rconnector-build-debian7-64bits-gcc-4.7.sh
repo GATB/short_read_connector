@@ -32,6 +32,11 @@ JENKINS_HOME         : ${JENKINS_HOME}
 WORKSPACE            : ${WORKSPACE}
 "
 
+echo "======================="
+echo "ls $JENKINS_HOME"
+ls ${JENKINS_HOME}
+echo "======================="
+
 error_code () { [ "$DO_NOT_STOP_AT_ERROR" = "true" ] && { return 0 ; } }
 
 [ "$DO_NOT_STOP_AT_ERROR" != "true" ] && { set -e ; } || { echo "(!) DEBUG mode, the script will NOT stop..." ; echo; }
@@ -64,6 +69,7 @@ BUILD_DIR=/scratchdir/$JENKINS_TASK/gatb-${TOOL_NAME}/build
 
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
+mkdir -p $JENKINS_WORKSPACE
 
 #-----------------------------------------------
 # we need gatb-core submodule to be initialized
