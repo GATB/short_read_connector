@@ -101,10 +101,10 @@ JENKINS_TASK_MAC=tool-rconnector-build-macos-10.9.5-gcc-4.2.1-gitlab
 wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/$JENKINS_TASK_DEB/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Linux.tar.gz
 [ $? != 0 ] && exit 1
 
-wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz
+wget $CI_URL/$JENKINS_TASK_MAC/lastSuccessfulBuild/artifact/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Darwin.tar.gz
 [ $? != 0 ] && exit 1
 
-wget $CI_URL/$JENKINS_TASK_DEB/lastSuccessfulBuild/artifact/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Source.tar.gz
+wget $CI_URL/$JENKINS_TASK_MAC/lastSuccessfulBuild/artifact/${TOOL_NAME}-${BRANCH_TO_BUILD}-bin-Source.tar.gz
 [ $? != 0 ] && exit 1
 
 
