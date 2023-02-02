@@ -68,7 +68,7 @@ sh ./short_read_connector_counter.sh index -b data/c1.fasta.gz -i my_counter_ind
 ls data/c2.fasta.gz > fof.txt # creates a file of files, check the section "Input read sets" for details
 sh ./short_read_connector_counter.sh query -i my_counter_index.dumped -q fof.txt  
 
-# Cat short_read_connector_res.txt to check the results
+cat short_read_connector_res.txt # to check the results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 short_read_connector_counter: options
@@ -158,13 +158,13 @@ Run a simple test counting for each reads from data/c2.fasta.gz, the number of o
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # First index the kmers from data/c1.fasta.gz:
-sh ../short_read_connector_linker.sh index -b data/c1.fasta.gz -i my_linker_index.dumped
+sh ./short_read_connector_linker.sh index -b data/c1.fasta.gz -i my_linker_index.dumped
 
 # Once indexation is made once, multiple queries may be performed as: 
 ls data/c2.fasta.gz > fof.txt # creates a file of files, check the section "Input read sets" for details
-sh ../short_read_connector_linker.sh query -i my_linker_index.dumped -q fof.txt  
+sh ./short_read_connector_linker.sh query -i my_linker_index.dumped -q fof.txt  
 
-# Cat short_read_connector_res.txt to check the results
+cat short_read_connector_res.txt #to check the results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 short_read_connector_linker: options
